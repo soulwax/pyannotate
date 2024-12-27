@@ -4,7 +4,9 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Optional, NoReturn
+from typing import Optional
+
+from .annotate_headers import walk_directory
 
 
 class AnnotationError(Exception):

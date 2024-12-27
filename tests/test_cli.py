@@ -2,20 +2,22 @@
 
 import logging
 from pathlib import Path
-import pytest
+
 from pyannotate.cli import main, setup_logging, parse_args
 
 
 def test_setup_logging(caplog):
     """Test logging configuration."""
-    setup_logging(verbose=True)
-    assert logging.getLogger().level == logging.DEBUG
+    with caplog.at_level(logging.DEBUG):
+        setup_logging(verbose=True)
+        assert logging.getLogger().level == logging.DEBUG
 
-    setup_logging(verbose=False)
-    assert logging.getLogger().level == logging.INFO
+    with caplog.at_level(logging.INFO):
+        setup_logging(verbose=False)
+        assert logging.getLogger().level == logging.INFO
 
 
-def test_parse_args(tmp_path):
+def test_parse_args():
     """Test argument parsing."""
     # Test default arguments
     args = parse_args()

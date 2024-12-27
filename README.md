@@ -23,13 +23,13 @@ pip install pyannotate
 
 ```bash
 # Annotate files in current directory
-pytreeprint
+pyannotate
 
 # Annotate files in specific directory
-pytreeprint -d /path/to/project
+pyannotate -d /path/to/project
 
 # Enable verbose logging
-pytreeprint -v
+pyannotate -v
 ```
 
 ### Python API

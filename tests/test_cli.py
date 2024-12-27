@@ -1,5 +1,7 @@
 """Tests for the CLI interface."""
 
+import argparse
+from unittest.mock import patch
 import logging
 from pathlib import Path
 import tempfile
@@ -19,16 +21,18 @@ def test_setup_logging(caplog):
 
 def test_parse_args():
     """Test argument parsing."""
-    args = parse_args()
-    assert args.directory == Path.cwd()
-    assert not args.verbose
+    args = parse_args(["-d", "/some/path", "-v"])
+    assert args.directory == Path("/some/path")
+    assert args.verbose
 
 
 def test_main_directory_not_found():
     """Test main function with non-existent directory."""
-    with tempfile.TemporaryDirectory() as temp_path:
-        nonexistent = Path(temp_path) / "nonexistent"
-        exit_code = main(nonexistent)
+    with patch("pyannotate.cli.parse_args") as mock_parse_args:
+        mock_parse_args.return_value = argparse.Namespace(
+            directory=Path("nonexistent"), verbose=False
+        )
+        exit_code = main()
         assert exit_code == 1
 
 
@@ -38,8 +42,12 @@ def test_main_successful_run():
         test_file = Path(temp_path) / "test.py"
         test_file.write_text("print('hello')")
 
-        exit_code = main(Path(temp_path))
-        assert exit_code == 0
+        with patch("pyannotate.cli.parse_args") as mock_parse_args:
+            mock_parse_args.return_value = argparse.Namespace(
+                directory=Path(temp_path), verbose=False
+            )
+            exit_code = main()
+            assert exit_code == 0
 
         content = test_file.read_text()
         assert "# File: test.py" in content

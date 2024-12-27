@@ -23,7 +23,7 @@ def setup_logging(verbose: bool) -> None:
     )
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(args=None) -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Add or update file headers in your project files."
@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
         help="Project root directory (default: current directory)",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def main(directory: Optional[Path] = None) -> int:

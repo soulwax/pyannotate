@@ -1,153 +1,96 @@
-# File: scripts/annotate-headers.py
-import os
-import logging
 from pathlib import Path
-from typing import NamedTuple, Optional, Set, List
-import re
+import shutil
+import pytest
+from pyannotate.annotate_headers import process_file, walk_directory
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
-
-class FilePattern(NamedTuple):
-    extensions: List[str]
-    comment_start: str
-    comment_end: Optional[str] = None
+# Directory for temporary test files
+TEST_DIR = Path("tests/sample_files")
 
 
-# Patterns to identify file types and their comment styles
-PATTERNS = [
-    FilePattern([".ts", ".js", ".jsx", ".tsx"], "//"),
-    FilePattern([".css"], "/*", "*/"),
-    FilePattern([".html", ".xml", ".svg"], "<!--", "-->"),
-    FilePattern([".py", ".sh", ".bash"], "#"),
-    FilePattern([".cpp", ".c", ".hpp", ".h"], "//"),
-    FilePattern(
-        [".jsonc", ".json5", ".code-workspace", ".eslintrc", ".babelrc", ".prettierrc"],
-        "//",
-    ),
-    FilePattern([".md"], "<!--", "-->"),
-    FilePattern([".java"], "//"),
-    FilePattern([".go"], "//"),
-    FilePattern([".rb"], "#"),
-    FilePattern([".php"], "//"),
-    FilePattern([".yaml", ".yml"], "#"),
-    FilePattern([".dockerfile"], "#"),
-    FilePattern([".ini", ".cfg"], "#"),
-]
-
-# Directories to ignore during traversal
-IGNORED_DIRS: Set[str] = {
-    "node_modules",
-    "dist",
-    "build",
-    ".git",
-    "coverage",
-    "vendor",
-    "__pycache__",
-    ".idea",
-    ".vscode",
-}
-
-# Special configuration files and their comment styles
-CONFIG_FILES = {
-    ".eslintrc": "//",
-    ".babelrc": "//",
-    ".prettierrc": "//",
-    "tsconfig.json": "//",
-    "jsconfig.json": "//",
-    ".swcrc": "//",
-    "docker-compose.yml": "#",
-    "Makefile": "#",
-    "CMakeLists.txt": "#",
-}
+@pytest.fixture(scope="module", autouse=True)
+def setup_and_teardown():
+    """Setup test environment and cleanup after tests."""
+    if TEST_DIR.exists():
+        shutil.rmtree(TEST_DIR)
+    TEST_DIR.mkdir(parents=True)
+    # Create sample files
+    (TEST_DIR / "valid_file.py").write_text("# Existing header\nprint('Hello, World!')\n")
+    (TEST_DIR / "valid_file.js").write_text("// Old Header\nconsole.log('Hello, World!');\n")
+    (TEST_DIR / "invalid_file.dat").write_text("No comments here")
+    nested_dir = TEST_DIR / "nested"
+    nested_dir.mkdir()
+    (nested_dir / "valid_nested_file.sh").write_text('#!/bin/bash\necho "Nested!"\n')
+    yield
+    shutil.rmtree(TEST_DIR)
 
 
-def get_special_file_pattern(filename: str) -> Optional[FilePattern]:
-    """Check if the file is a special config file that supports comments."""
-    if filename in CONFIG_FILES:
-        return FilePattern([], CONFIG_FILES[filename])
-    return None
+def test_process_file():
+    """Test processing individual files."""
+    file_path = TEST_DIR / "valid_file.py"
+    process_file(file_path, TEST_DIR)
+    content = file_path.read_text()
+    assert content.startswith("# File: valid_file.py\n"), "Header not added correctly for .py file"
+
+    file_path = TEST_DIR / "valid_file.js"
+    process_file(file_path, TEST_DIR)
+    content = file_path.read_text()
+    assert content.startswith("// File: valid_file.js\n"), "Header not added correctly for .js file"
+
+    file_path = TEST_DIR / "invalid_file.dat"
+    process_file(file_path, TEST_DIR)
+    content = file_path.read_text()
+    assert "File:" not in content, "Header added incorrectly for unsupported file type"
 
 
-def determine_comment_pattern(file_path: Path) -> Optional[FilePattern]:
-    """Determine the appropriate comment pattern for a given file."""
-    pattern = next((p for p in PATTERNS if file_path.suffix in p.extensions), None)
-    return pattern or get_special_file_pattern(file_path.name)
+def test_walk_directory():
+    """Test directory traversal and file processing."""
+    walk_directory(TEST_DIR, TEST_DIR)
+
+    py_file = TEST_DIR / "valid_file.py"
+    js_file = TEST_DIR / "valid_file.js"
+    sh_file = TEST_DIR / "nested/valid_nested_file.sh"
+
+    assert py_file.read_text().startswith(
+        "# File: valid_file.py\n"
+    ), "Header not added correctly for .py file"
+    assert js_file.read_text().startswith(
+        "// File: valid_file.js\n"
+    ), "Header not added correctly for .js file"
+    assert sh_file.read_text().startswith(
+        "# File: nested/valid_nested_file.sh\n"
+    ), "Header not added correctly for .sh file"
 
 
-def read_file_content(file_path: Path) -> Optional[str]:
-    """Safely read file content."""
-    try:
-        return file_path.read_text(encoding="utf-8")
-    except (UnicodeDecodeError, OSError) as e:
-        logging.warning(f"Failed to read {file_path}: {e}")
-        return None
+def test_existing_header_update():
+    """Test updating existing headers."""
+    file_path = TEST_DIR / "valid_file.js"
+    process_file(file_path, TEST_DIR)
+    updated_content = file_path.read_text()
+    assert updated_content.startswith("// File: valid_file.js\n"), "Header not updated correctly"
 
 
-def write_file_content(file_path: Path, content: str) -> None:
-    """Safely write file content."""
-    try:
-        file_path.write_text(content, encoding="utf-8")
-        logging.info(f"Updated header in: {file_path}")
-    except OSError as e:
-        logging.error(f"Failed to write to {file_path}: {e}")
+def test_ignored_directories():
+    """Ensure ignored directories are skipped."""
+    ignored_dir = TEST_DIR / "node_modules"
+    ignored_dir.mkdir()
+    (ignored_dir / "ignored_file.py").write_text("print('This should not be processed')")
+
+    walk_directory(TEST_DIR, TEST_DIR)
+
+    ignored_file = ignored_dir / "ignored_file.py"
+    content = ignored_file.read_text()
+    assert "File:" not in content, "Ignored directory files should not be processed"
 
 
-def process_file(file_path: Path, project_root: Path) -> None:
-    """Process a single file and add or update its header annotation."""
-    pattern = determine_comment_pattern(file_path)
-    if not pattern:
-        return
+def test_shebang_preservation():
+    """Ensure shebang lines are preserved."""
+    file_path = TEST_DIR / "nested/valid_nested_file.sh"
+    original_content = file_path.read_text()
+    assert original_content.startswith("#!/bin/bash\n"), "Initial shebang check failed"
 
-    content = read_file_content(file_path)
-    if content is None:
-        return
-
-    relative_path = str(file_path.relative_to(project_root)).replace(os.sep, "/")
-    header_line = f"{pattern.comment_start} File: {relative_path}{pattern.comment_end or ''}"
-
-    header_regex = re.compile(
-        rf"^(?:#!.*\n)?{re.escape(pattern.comment_start)}\s*File:\s*[^\n]*{re.escape(pattern.comment_end or '')}\n",
-        re.MULTILINE,
-    )
-
-    has_shebang = content.startswith("#!")
-    shebang_line = content.split("\n", 1)[0] + "\n" if has_shebang else ""
-
-    if header_regex.search(content):
-        new_content = header_regex.sub(
-            f"{shebang_line}{header_line}\n" if has_shebang else f"{header_line}\n",
-            content,
-        )
-    else:
-        new_content = (
-            f"{shebang_line}{header_line}\n{content[len(shebang_line):]}"
-            if has_shebang
-            else f"{header_line}\n{content}"
-        )
-
-    if new_content != content:
-        write_file_content(file_path, new_content)
-
-
-def walk_directory(dir_path: Path, project_root: Path) -> None:
-    """Recursively walk through directory and process files."""
-    for entry in dir_path.iterdir():
-        if entry.is_dir():
-            if entry.name not in IGNORED_DIRS:
-                walk_directory(entry, project_root)
-        elif entry.is_file():
-            process_file(entry, project_root)
-
-
-def main() -> None:
-    """Main function to initiate the annotation process."""
-    project_root = Path.cwd()
-    logging.info(f"Starting file annotation from: {project_root}")
-    walk_directory(project_root, project_root)
-    logging.info("File annotation complete!")
-
-
-if __name__ == "__main__":
-    main()
+    process_file(file_path, TEST_DIR)
+    updated_content = file_path.read_text()
+    assert updated_content.startswith(
+        "#!/bin/bash\n# File: nested/valid_nested_file.sh\n"
+    ), "Shebang line not preserved"
+    assert "#!/bin/bash" in updated_content, "Shebang content lost"

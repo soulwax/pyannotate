@@ -1,7 +1,7 @@
 from pathlib import Path
 import shutil
 import pytest
-from src.pyannotate.annotate_headers import process_file, walk_directory
+from pyannotate.annotate_headers import process_file, walk_directory
 
 # Directory for temporary test files
 TEST_DIR = Path("tests/sample_files")
@@ -64,10 +64,9 @@ def test_walk_directory():
 def test_existing_header_update():
     """Test updating existing headers."""
     file_path = TEST_DIR / "valid_file.js"
-    original_content = file_path.read_text()
     process_file(file_path, TEST_DIR)
     updated_content = file_path.read_text()
-    assert updated_content != original_content, "Existing header was not updated"
+    assert updated_content.startswith("// File: valid_file.js\n"), "Header not updated correctly"
 
 
 def test_ignored_directories():
@@ -87,8 +86,11 @@ def test_shebang_preservation():
     """Ensure shebang lines are preserved."""
     file_path = TEST_DIR / "nested/valid_nested_file.sh"
     original_content = file_path.read_text()
+    assert original_content.startswith("#!/bin/bash\n"), "Initial shebang check failed"
+
     process_file(file_path, TEST_DIR)
     updated_content = file_path.read_text()
     assert updated_content.startswith(
         "#!/bin/bash\n# File: nested/valid_nested_file.sh\n"
     ), "Shebang line not preserved"
+    assert "#!/bin/bash" in updated_content, "Shebang content lost"

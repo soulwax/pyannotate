@@ -5,7 +5,7 @@ This package provides functionality to automatically add or update file headers
 in various programming language files.
 """
 
-from pyannotate.annotate_headers import (
+from .annotate_headers import (
     process_file,
     walk_directory,
     FilePattern,

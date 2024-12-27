@@ -4,9 +4,11 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, NoReturn
 
-from pyannotate.annotate_headers import walk_directory
+
+class AnnotationError(Exception):
+    """Base exception for annotation errors."""
 
 
 def setup_logging(verbose: bool) -> None:
@@ -35,24 +37,26 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(directory: Optional[Path] = None) -> int:
     """Main entry point for the CLI."""
     args = parse_args()
+    if directory:
+        args.directory = directory
     setup_logging(args.verbose)
 
     try:
         project_root = args.directory.resolve()
         if not project_root.is_dir():
-            logging.error(f"Directory not found: {project_root}")
+            logging.error("Directory not found: %s", project_root)
             return 1
 
-        logging.info(f"Starting file annotation from: {project_root}")
+        logging.info("Starting file annotation from: %s", project_root)
         walk_directory(project_root, project_root)
         logging.info("File annotation complete!")
         return 0
 
-    except Exception as e:
-        logging.error(f"An error occurred: {e}")
+    except (OSError, AnnotationError) as e:
+        logging.error("An error occurred: %s", e)
         if args.verbose:
             logging.exception("Detailed error information:")
         return 1

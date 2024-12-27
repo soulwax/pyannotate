@@ -30,3 +30,12 @@ max-line-length = 100
 
 [tool.pylint.basic]
 good-names = ["i", "j", "k", "ex", "Run", "_", "fp", "id"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=pyannotate"
+pythonpath = [
+    ".",
+    "src",
+]

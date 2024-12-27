@@ -174,3 +174,5 @@ cython_debug/
 # Custom
 tree.txt
 test.txt
+pytest.txt
+pylint.txt

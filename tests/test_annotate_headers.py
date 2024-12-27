@@ -50,15 +50,33 @@ def test_walk_directory():
     js_file = TEST_DIR / "valid_file.js"
     sh_file = TEST_DIR / "nested/valid_nested_file.sh"
 
+    # Read and check content
+    sh_content = sh_file.read_text()
+    assert sh_content.startswith("#!/bin/bash\n"), "Shebang line not found"
+    assert "# File: nested/valid_nested_file.sh\n" in sh_content, "Header not found in shell script"
+
     assert py_file.read_text().startswith(
         "# File: valid_file.py\n"
     ), "Header not added correctly for .py file"
     assert js_file.read_text().startswith(
         "// File: valid_file.js\n"
     ), "Header not added correctly for .js file"
-    assert sh_file.read_text().startswith(
-        "# File: nested/valid_nested_file.sh\n"
-    ), "Header not added correctly for .sh file"
+
+
+def test_shebang_preservation():
+    """Ensure shebang lines are preserved."""
+    file_path = TEST_DIR / "nested/valid_nested_file.sh"
+    original_content = file_path.read_text()
+    assert original_content.startswith("#!/bin/bash\n"), "Initial shebang check failed"
+
+    process_file(file_path, TEST_DIR)
+    updated_content = file_path.read_text()
+    assert "#!/bin/bash\n" in updated_content, "Shebang line lost"
+    assert "# File: nested/valid_nested_file.sh\n" in updated_content, "Header not found"
+    assert len(updated_content.split("#!/bin/bash")) == 2, "Multiple shebang lines found"
+    assert (
+        len(updated_content.split("File: nested/valid_nested_file.sh")) == 2
+    ), "Multiple headers found"
 
 
 def test_existing_header_update():
@@ -80,17 +98,3 @@ def test_ignored_directories():
     ignored_file = ignored_dir / "ignored_file.py"
     content = ignored_file.read_text()
     assert "File:" not in content, "Ignored directory files should not be processed"
-
-
-def test_shebang_preservation():
-    """Ensure shebang lines are preserved."""
-    file_path = TEST_DIR / "nested/valid_nested_file.sh"
-    original_content = file_path.read_text()
-    assert original_content.startswith("#!/bin/bash\n"), "Initial shebang check failed"
-
-    process_file(file_path, TEST_DIR)
-    updated_content = file_path.read_text()
-    assert updated_content.startswith(
-        "#!/bin/bash\n# File: nested/valid_nested_file.sh\n"
-    ), "Shebang line not preserved"
-    assert "#!/bin/bash" in updated_content, "Shebang content lost"

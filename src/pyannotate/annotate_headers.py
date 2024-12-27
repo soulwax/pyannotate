@@ -41,6 +41,17 @@ CONFIG_FILES = {
 }
 
 
+def _normalize_path(path: str) -> str:
+    """Normalize path separators to forward slashes."""
+    return path.replace(os.sep, "/")
+
+
+def _create_header(file_path: Path, project_root: Path) -> str:
+    """Create the header content for a file."""
+    relative_path = os.path.relpath(file_path, project_root)
+    return f"File: {_normalize_path(relative_path)}"
+
+
 def _get_comment_style(file_path: Path) -> Optional[str]:
     """Determine the appropriate comment style for a given file."""
     # Check if it's a special config file
@@ -52,12 +63,6 @@ def _get_comment_style(file_path: Path) -> Optional[str]:
         if any(str(file_path).lower().endswith(ext) for ext in pattern.extensions):
             return pattern.comment_style
     return None
-
-
-def _create_header(file_path: Path, project_root: Path) -> str:
-    """Create the header content for a file."""
-    relative_path = os.path.relpath(file_path, project_root)
-    return f"File: {relative_path}"
 
 
 def process_file(file_path: Path, project_root: Path) -> None:
@@ -73,20 +78,28 @@ def process_file(file_path: Path, project_root: Path) -> None:
     try:
         content = file_path.read_text()
         header = _create_header(file_path, project_root)
+        header_line = f"{comment_style} {header}"
 
-        # Handle shebang lines in shell scripts
+        # Split content into lines
         lines = content.splitlines()
-        if lines and lines[0].startswith("#!"):
+        if not lines:
+            new_content = f"{header_line}\n"
+        elif lines[0].startswith("#!"):
+            # Preserve shebang line for shell scripts
             shebang = lines[0]
             remaining_content = "\n".join(lines[1:]).lstrip()
-            if comment_style == "#":
-                new_content = f"{shebang}\n{comment_style} {
-                    header}\n{remaining_content}"
-            else:
-                new_content = f"{shebang}\n{comment_style} {
-                    header}\n{remaining_content}"
+
+            # Check if header already exists and remove it
+            remaining_lines = remaining_content.splitlines()
+            if remaining_lines and remaining_lines[0].startswith(f"{comment_style} File:"):
+                remaining_content = "\n".join(remaining_lines[1:]).lstrip()
+
+            new_content = f"{shebang}\n{header_line}\n{remaining_content}"
         else:
-            new_content = f"{comment_style} {header}\n{content.lstrip()}"
+            # Remove existing header if present
+            if lines[0].startswith(f"{comment_style} File:"):
+                content = "\n".join(lines[1:]).lstrip()
+            new_content = f"{header_line}\n{content}"
 
         file_path.write_text(new_content)
         logging.info("Updated header in: %s", file_path)

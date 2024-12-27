@@ -4,14 +4,14 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Set
+from typing import Optional, Set, List
 
 
 @dataclass
 class FilePattern:
     """Configuration for file patterns and their comment styles."""
 
-    extensions: list[str]
+    extensions: List[str]  # Use List from typing
     comment_style: str
 
 

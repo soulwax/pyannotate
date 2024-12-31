@@ -19,7 +19,7 @@ class FilePattern:
 PATTERNS = [
     FilePattern([".py", ".sh", ".bash"], "#"),
     FilePattern([".js", ".ts", ".jsx", ".tsx", ".c", ".cpp", ".h", ".hpp"], "//"),
-    FilePattern([".html", ".xml", ".svg", ".md"], "<!--"),
+    FilePattern([".html", ".xml", ".svg"], "<!--"),
 ]
 
 # Define directories to ignore

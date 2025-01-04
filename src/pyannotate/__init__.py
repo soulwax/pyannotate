@@ -1,3 +1,4 @@
+# File: src/pyannotate/__init__.py
 """
 PyAnnotate - A tool for annotating files with standardized headers.
 

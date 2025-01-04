@@ -1,3 +1,4 @@
+# File: setup.py
 from setuptools import setup, find_packages
 
 # Read README with explicit UTF-8 encoding

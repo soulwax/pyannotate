@@ -1,3 +1,4 @@
+# File: tests/__init__.py
 """
 Initialization for tests package.
 

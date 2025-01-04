@@ -5,22 +5,23 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Set, List
+from typing import Optional, Set, List, Tuple
 
 
 @dataclass
 class FilePattern:
     """Configuration for file patterns and their comment styles."""
 
-    extensions: List[str]  # Use List from typing
-    comment_style: str
+    extensions: List[str]
+    comment_start: str
+    comment_end: str = ""  # Empty string for single-line comment styles
 
 
 # Define supported file patterns and their comment styles
 PATTERNS = [
-    FilePattern([".py", ".sh", ".bash"], "#"),
-    FilePattern([".js", ".ts", ".jsx", ".tsx", ".c", ".cpp", ".h", ".hpp"], "//"),
-    FilePattern([".html", ".xml", ".svg"], "<!--"),
+    FilePattern([".py", ".sh", ".bash"], "#", ""),
+    FilePattern([".js", ".ts", ".jsx", ".tsx", ".c", ".cpp", ".h", ".hpp"], "//", ""),
+    FilePattern([".html", ".xml", ".svg"], "<!--", "-->"),
 ]
 
 # Define directories to ignore
@@ -34,11 +35,11 @@ IGNORED_DIRS: Set[str] = {
     ".venv",
 }
 
-# Define special config files and their comment styles
-CONFIG_FILES = {
-    ".gitignore": "#",
-    ".dockerignore": "#",
-    ".env": "#",
+# Define special config files and their comment styles as (start, end) tuples
+CONFIG_FILES: dict[str, Tuple[str, str]] = {
+    ".gitignore": ("#", ""),
+    ".dockerignore": ("#", ""),
+    ".env": ("#", ""),
 }
 
 
@@ -53,7 +54,7 @@ def _create_header(file_path: Path, project_root: Path) -> str:
     return f"File: {_normalize_path(relative_path)}"
 
 
-def _get_comment_style(file_path: Path) -> Optional[str]:
+def _get_comment_style(file_path: Path) -> Optional[Tuple[str, str]]:
     """Determine the appropriate comment style for a given file."""
     # Check if it's a special config file
     if file_path.name in CONFIG_FILES:
@@ -62,8 +63,20 @@ def _get_comment_style(file_path: Path) -> Optional[str]:
     # Check file extension patterns
     for pattern in PATTERNS:
         if any(str(file_path).lower().endswith(ext) for ext in pattern.extensions):
-            return pattern.comment_style
+            return (pattern.comment_start, pattern.comment_end)
     return None
+
+
+def _is_html_like(file_path: Path) -> bool:
+    """Check if the file is HTML-like and needs special handling."""
+    return any(str(file_path).lower().endswith(ext) for ext in [".html", ".xml", ".svg"])
+
+
+def _create_header_line(comment_start: str, comment_end: str, header: str) -> str:
+    """Create a properly formatted header line with comments."""
+    if comment_end:
+        return f"{comment_start} {header} {comment_end}"
+    return f"{comment_start} {header}"
 
 
 def process_file(file_path: Path, project_root: Path) -> None:
@@ -76,34 +89,65 @@ def process_file(file_path: Path, project_root: Path) -> None:
     if not comment_style:
         return
 
+    comment_start, comment_end = comment_style
+
     try:
         content = file_path.read_text()
         header = _create_header(file_path, project_root)
-        header_line = f"{comment_style} {header}"
+        header_line = _create_header_line(comment_start, comment_end, header)
 
         # Split content into lines
         lines = content.splitlines()
+
+        # Handle empty files
         if not lines:
             new_content = f"{header_line}\n"
-        elif lines[0].startswith("#!"):
-            # Preserve shebang line for shell scripts
+            file_path.write_text(new_content)
+            return
+
+        # Handle files with shebang
+        if lines[0].startswith("#!"):
             shebang = lines[0]
-            remaining_content = "\n".join(lines[1:]).lstrip()
+            remaining_lines = lines[1:]
 
-            # Check if header already exists and remove it
-            remaining_lines = remaining_content.splitlines()
-            if remaining_lines and remaining_lines[0].startswith(f"{comment_style} File:"):
-                remaining_content = "\n".join(remaining_lines[1:]).lstrip()
+            # Remove existing header if present
+            if remaining_lines and any(
+                line.strip().startswith(f"{comment_start} File:") for line in remaining_lines[:1]
+            ):
+                remaining_lines = remaining_lines[1:]
 
-            new_content = f"{shebang}\n{header_line}\n{remaining_content}"
+            new_content = f"{shebang}\n{header_line}\n" + "\n".join(remaining_lines)
+
+        # Handle HTML-like files
+        elif _is_html_like(file_path):
+            # Keep XML/DOCTYPE declaration as first line if present
+            if lines[0].lower().startswith(("<!doctype", "<?xml")):
+                first_line = lines[0]
+                rest_lines = lines[1:]
+
+                # Remove existing header if present
+                if rest_lines and any(
+                    line.strip().startswith(f"{comment_start} File:") for line in rest_lines[:1]
+                ):
+                    rest_lines = rest_lines[1:]
+
+                new_content = f"{first_line}\n{header_line}\n" + "\n".join(rest_lines)
+            else:
+                # Remove existing header if present
+                if any(line.strip().startswith(f"{comment_start} File:") for line in lines[:1]):
+                    lines = lines[1:]
+                new_content = f"{header_line}\n" + "\n".join(lines)
+
+        # Handle all other files
         else:
             # Remove existing header if present
-            if lines[0].startswith(f"{comment_style} File:"):
-                content = "\n".join(lines[1:]).lstrip()
-            new_content = f"{header_line}\n{content}"
+            if any(line.strip().startswith(f"{comment_start} File:") for line in lines[:1]):
+                lines = lines[1:]
+            new_content = f"{header_line}\n" + "\n".join(lines)
 
         file_path.write_text(new_content)
         logging.info("Updated header in: %s", file_path)
+
     except OSError as e:
         logging.error("Failed to process %s: %s", file_path, e)
 

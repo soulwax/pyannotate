@@ -84,8 +84,16 @@ PyAnnotate automatically recognizes various file types and applies the appropria
 - **HTML/XML** (.html, .xml, .svg): `<!-- -->`
 - **Shell scripts** (.sh, .bash): `#`
 - **C/C++** (.c, .cpp, .h, .hpp): `//`
+- **And many more formats... e.g.:**
+--**JSON5** (.json5): `//`
+--**TOML** (.toml): `#`
+
+Suffice to say there is more to come.
+
+## File formats we leave alone
+
 - **Markdown** (.md): `<!-- -->`
-- **And many more formats...**
+- **JSON** (.json): `//`
 
 ---
 
@@ -112,7 +120,7 @@ CONFIG_FILES[".customrc"] = "//"
 
 ### 🚧 Planned Features
 
-- [ ] Add support for multi-line comment styles (e.g., `/* */` for CSS)
+- [x] Add support for multi-line comment styles (e.g., `/* */` for CSS)
 - [ ] Implement configuration file support (YAML/JSON) for project-specific settings
 - [ ] Add option to customize header template
 - [ ] Create option to add author/date information to headers

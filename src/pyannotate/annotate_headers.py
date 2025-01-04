@@ -5,7 +5,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Set, List, Tuple
+from typing import Optional, Set, List, Tuple, Dict
 
 
 @dataclass
@@ -36,7 +36,7 @@ IGNORED_DIRS: Set[str] = {
 }
 
 # Define special config files and their comment styles as (start, end) tuples
-CONFIG_FILES: dict[str, Tuple[str, str]] = {
+CONFIG_FILES: Dict[str, Tuple[str, str]] = {
     ".gitignore": ("#", ""),
     ".dockerignore": ("#", ""),
     ".env": ("#", ""),

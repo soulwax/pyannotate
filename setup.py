@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as readme_file:
 
 setup(
     name="pyannotate",
-    version="0.2.1",
+    version="0.3.3",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     install_requires=[],

@@ -27,20 +27,60 @@ def setup_and_teardown():
 
 def test_process_file():
     """Test processing individual files."""
+    # Test Python file
     file_path = TEST_DIR / "valid_file.py"
     process_file(file_path, TEST_DIR)
     content = file_path.read_text()
     assert content.startswith("# File: valid_file.py\n"), "Header not added correctly for .py file"
 
+    # Test JavaScript file
     file_path = TEST_DIR / "valid_file.js"
     process_file(file_path, TEST_DIR)
     content = file_path.read_text()
     assert content.startswith("// File: valid_file.js\n"), "Header not added correctly for .js file"
 
+    # Test unsupported file type
     file_path = TEST_DIR / "invalid_file.dat"
     process_file(file_path, TEST_DIR)
     content = file_path.read_text()
     assert "File:" not in content, "Header added incorrectly for unsupported file type"
+
+    # Test HTML file with DOCTYPE
+    html_file = TEST_DIR / "test.html"
+    html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+    <h1>Test</h1>
+</body>
+</html>"""
+    html_file.write_text(html_content)
+    process_file(html_file, TEST_DIR)
+    processed_content = html_file.read_text()
+    assert processed_content.startswith(
+        "<!DOCTYPE html>\n<!-- File: test.html -->"
+    ), "HTML DOCTYPE handling incorrect"
+    assert (
+        "<!DOCTYPE html>" in processed_content.splitlines()[0]
+    ), "DOCTYPE not preserved as first line"
+    assert "File: test.html" in processed_content.splitlines()[1], "Header not on second line"
+
+    # Test XML file
+    xml_file = TEST_DIR / "test.xml"
+    xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <item>Test</item>
+</root>"""
+    xml_file.write_text(xml_content)
+    process_file(xml_file, TEST_DIR)
+    processed_content = xml_file.read_text()
+    assert processed_content.startswith(
+        '<?xml version="1.0" encoding="UTF-8"?>'
+    ), "XML declaration not preserved"
+    assert "File: test.xml" in processed_content.splitlines()[1], "Header not on second line"
 
 
 def test_walk_directory():

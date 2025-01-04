@@ -79,6 +79,52 @@ def _create_header_line(comment_start: str, comment_end: str, header: str) -> st
     return f"{comment_start} {header}"
 
 
+def _has_existing_header(lines: List[str], comment_start: str, start_index: int = 0) -> bool:
+    """Check if file has an existing header at the specified start index."""
+    return bool(lines[start_index:]) and any(
+        line.strip().startswith(f"{comment_start} File:")
+        for line in lines[start_index : start_index + 1]
+    )
+
+
+def _remove_existing_header(
+    lines: List[str], comment_start: str, start_index: int = 0
+) -> List[str]:
+    """Remove existing header if present, starting from the specified index."""
+    if _has_existing_header(lines, comment_start, start_index):
+        return lines[:start_index] + lines[start_index + 1 :]
+    return lines
+
+
+def _process_empty_file(header_line: str) -> str:
+    """Process an empty file."""
+    return f"{header_line}\n"
+
+
+def _process_shebang_file(lines: List[str], header_line: str, comment_start: str) -> str:
+    """Process a file with a shebang line."""
+    shebang = lines[0]
+    remaining_lines = _remove_existing_header(lines[1:], comment_start)
+    return f"{shebang}\n{header_line}\n" + "\n".join(remaining_lines)
+
+
+def _process_html_like_file(lines: List[str], header_line: str, comment_start: str) -> str:
+    """Process an HTML-like file."""
+    if lines[0].lower().startswith(("<!doctype", "<?xml")):
+        first_line = lines[0]
+        rest_lines = _remove_existing_header(lines[1:], comment_start)
+        return f"{first_line}\n{header_line}\n" + "\n".join(rest_lines)
+
+    lines = _remove_existing_header(lines, comment_start)
+    return f"{header_line}\n" + "\n".join(lines)
+
+
+def _process_regular_file(lines: List[str], header_line: str, comment_start: str) -> str:
+    """Process a regular file."""
+    lines = _remove_existing_header(lines, comment_start)
+    return f"{header_line}\n" + "\n".join(lines)
+
+
 def process_file(file_path: Path, project_root: Path) -> None:
     """Process a single file, adding or updating its header."""
     if not file_path.is_file():
@@ -95,55 +141,16 @@ def process_file(file_path: Path, project_root: Path) -> None:
         content = file_path.read_text()
         header = _create_header(file_path, project_root)
         header_line = _create_header_line(comment_start, comment_end, header)
-
-        # Split content into lines
         lines = content.splitlines()
 
-        # Handle empty files
         if not lines:
-            new_content = f"{header_line}\n"
-            file_path.write_text(new_content)
-            return
-
-        # Handle files with shebang
-        if lines[0].startswith("#!"):
-            shebang = lines[0]
-            remaining_lines = lines[1:]
-
-            # Remove existing header if present
-            if remaining_lines and any(
-                line.strip().startswith(f"{comment_start} File:") for line in remaining_lines[:1]
-            ):
-                remaining_lines = remaining_lines[1:]
-
-            new_content = f"{shebang}\n{header_line}\n" + "\n".join(remaining_lines)
-
-        # Handle HTML-like files
+            new_content = _process_empty_file(header_line)
+        elif lines[0].startswith("#!"):
+            new_content = _process_shebang_file(lines, header_line, comment_start)
         elif _is_html_like(file_path):
-            # Keep XML/DOCTYPE declaration as first line if present
-            if lines[0].lower().startswith(("<!doctype", "<?xml")):
-                first_line = lines[0]
-                rest_lines = lines[1:]
-
-                # Remove existing header if present
-                if rest_lines and any(
-                    line.strip().startswith(f"{comment_start} File:") for line in rest_lines[:1]
-                ):
-                    rest_lines = rest_lines[1:]
-
-                new_content = f"{first_line}\n{header_line}\n" + "\n".join(rest_lines)
-            else:
-                # Remove existing header if present
-                if any(line.strip().startswith(f"{comment_start} File:") for line in lines[:1]):
-                    lines = lines[1:]
-                new_content = f"{header_line}\n" + "\n".join(lines)
-
-        # Handle all other files
+            new_content = _process_html_like_file(lines, header_line, comment_start)
         else:
-            # Remove existing header if present
-            if any(line.strip().startswith(f"{comment_start} File:") for line in lines[:1]):
-                lines = lines[1:]
-            new_content = f"{header_line}\n" + "\n".join(lines)
+            new_content = _process_regular_file(lines, header_line, comment_start)
 
         file_path.write_text(new_content)
         logging.info("Updated header in: %s", file_path)

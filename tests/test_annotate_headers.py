@@ -2,7 +2,7 @@
 from pathlib import Path
 import shutil
 import pytest
-from pyannotate.annotate_headers import process_file, walk_directory
+from pyannotate.annotate_headers import _get_comment_style, process_file, walk_directory
 
 # Directory for temporary test files
 TEST_DIR = Path("tests/sample_files")
@@ -81,6 +81,106 @@ def test_process_file():
         '<?xml version="1.0" encoding="UTF-8"?>'
     ), "XML declaration not preserved"
     assert "File: test.xml" in processed_content.splitlines()[1], "Header not on second line"
+
+
+def test_powershell_preserve_comments():
+    """Test processing PowerShell files while preserving existing comments."""
+    ps_file = TEST_DIR / "test_preserve.ps1"
+    ps_content = """# This is an important PowerShell script comment
+# With multiple comment lines
+# That should be preserved
+Write-Host "Hello, World!" """
+    ps_file.write_text(ps_content)
+    process_file(ps_file, TEST_DIR)
+    processed_content = ps_file.read_text()
+
+    # Split content into lines for easier testing
+    content_lines = processed_content.splitlines()
+
+    # Verify structure
+    assert content_lines[0].startswith("# File: test_preserve.ps1"), "Header not on first line"
+    assert content_lines[1] == "", "No blank line after header"
+    assert (
+        content_lines[2] == "# This is an important PowerShell script comment"
+    ), "First comment not preserved"
+    assert "That should be preserved" in processed_content, "Comments not preserved"
+    assert "Write-Host" in processed_content, "Code content preserved"
+
+    # Verify no duplicate header
+    headers = [line for line in content_lines if "File: test_preserve.ps1" in line]
+    assert len(headers) == 1, "Multiple headers found"
+
+
+def test_powershell_pattern_matching():
+    """Test PowerShell file pattern recognition."""
+    ps_file = TEST_DIR / "test_multi_comment.ps1"
+    ps_content = """# PowerShell Backup Script V2.1
+# Enhanced version with wildcard support and improved config handling
+Write-Host "Testing pattern matching" """
+
+    # Write test file
+    ps_file.write_text(ps_content)
+
+    # Test pattern recognition
+    comment_style = _get_comment_style(ps_file)
+    assert comment_style is not None, "PowerShell file pattern not recognized"
+    assert comment_style == ("#", ""), "Incorrect comment style for PowerShell"
+
+    # Process the file
+    process_file(ps_file, TEST_DIR)
+    processed_content = ps_file.read_text()
+
+    # Split into lines for analysis
+    lines = processed_content.splitlines()
+
+    # Verify structure
+    assert lines[0].startswith("# File:"), "Header not added"
+    assert lines[1] == "", "No blank line after header"
+    assert lines[2] == "# PowerShell Backup Script V2.1", "First comment line not preserved exactly"
+    assert (
+        lines[3] == "# Enhanced version with wildcard support and improved config handling"
+    ), "Second comment line not preserved exactly"
+
+
+def test_powershell_multiline_header():
+    """Test processing PowerShell files with multiline comments at the top."""
+    ps_file = TEST_DIR / "test_multiline.ps1"
+    ps_content = """# PowerShell Backup Script V2.1
+# Enhanced version with wildcard support and improved config handling
+# Created by: John Doe
+# Last modified: 2024-01-05
+
+Write-Host "Backup script starting..."
+"""
+    ps_file.write_text(ps_content)
+
+    # Process the file
+    process_file(ps_file, TEST_DIR)
+    processed_content = ps_file.read_text()
+
+    # Verify the structure
+    lines = processed_content.splitlines()
+    assert lines[0].startswith("# File: test_multiline.ps1"), "Header not at top"
+    assert lines[1] == "", "No blank line after header"
+    assert "# PowerShell Backup Script V2.1" in lines[2], "First comment line not preserved"
+    assert "# Enhanced version" in lines[3], "Second comment line not preserved"
+    assert "# Created by: John Doe" in lines[4], "Third comment line not preserved"
+    assert "Write-Host" in processed_content, "Original code not preserved"
+
+
+def test_shell_file():
+    """Test processing shell scripts."""
+    sh_file = TEST_DIR / "test.sh"
+    sh_content = """#!/bin/bash
+echo "Hello, World!" """
+    sh_file.write_text(sh_content)
+    process_file(sh_file, TEST_DIR)
+    processed_content = sh_file.read_text()
+    assert processed_content.startswith(
+        "#!/bin/bash\n# File: test.sh\n"
+    ), "Header not added correctly for .sh file"
+    assert "echo" in processed_content, "Script content lost"
+    assert "Hello, World!" in processed_content, "Script content lost"
 
 
 def test_walk_directory():

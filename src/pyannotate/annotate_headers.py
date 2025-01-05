@@ -19,7 +19,7 @@ class FilePattern:
 
 # Define supported file patterns and their comment styles
 PATTERNS = [
-    FilePattern([".py", ".sh", ".bash"], "#", ""),
+    FilePattern([".py", ".sh", ".bash", ".ps1"], "#", ""),
     FilePattern([".js", ".ts", ".jsx", ".tsx", ".c", ".cpp", ".h", ".hpp"], "//", ""),
     FilePattern([".html", ".xml", ".svg"], "<!--", "-->"),
 ]
@@ -120,9 +120,12 @@ def _process_html_like_file(lines: List[str], header_line: str, comment_start: s
 
 
 def _process_regular_file(lines: List[str], header_line: str, comment_start: str) -> str:
-    """Process a regular file."""
+    """Process a regular file by inserting the header and preserving existing content."""
+    # Remove any existing header if present
     lines = _remove_existing_header(lines, comment_start)
-    return f"{header_line}\n" + "\n".join(lines)
+
+    # Add the new header with a blank line after
+    return f"{header_line}\n\n" + "\n".join(lines)
 
 
 def process_file(file_path: Path, project_root: Path) -> None:
@@ -133,6 +136,7 @@ def process_file(file_path: Path, project_root: Path) -> None:
 
     comment_style = _get_comment_style(file_path)
     if not comment_style:
+        logging.debug("Skipping unsupported file type: %s", file_path)
         return
 
     comment_start, comment_end = comment_style
@@ -143,6 +147,11 @@ def process_file(file_path: Path, project_root: Path) -> None:
         header_line = _create_header_line(comment_start, comment_end, header)
         lines = content.splitlines()
 
+        # Detect if file already has the header
+        if _has_existing_header(lines, comment_start):
+            logging.debug("File already has header: %s", file_path)
+            return
+
         if not lines:
             new_content = _process_empty_file(header_line)
         elif lines[0].startswith("#!"):
@@ -150,10 +159,14 @@ def process_file(file_path: Path, project_root: Path) -> None:
         elif _is_html_like(file_path):
             new_content = _process_html_like_file(lines, header_line, comment_start)
         else:
-            new_content = _process_regular_file(lines, header_line, comment_start)
+            new_content = f"{header_line}\n\n" + "\n".join(lines)
 
-        file_path.write_text(new_content)
-        logging.info("Updated header in: %s", file_path)
+        # Only write if content has changed
+        if new_content != content:
+            file_path.write_text(new_content)
+            logging.info("Updated header in: %s", file_path)
+        else:
+            logging.debug("No changes needed for: %s", file_path)
 
     except OSError as e:
         logging.error("Failed to process %s: %s", file_path, e)

@@ -147,11 +147,7 @@ def process_file(file_path: Path, project_root: Path) -> None:
         header_line = _create_header_line(comment_start, comment_end, header)
         lines = content.splitlines()
 
-        # Detect if file already has the header
-        if _has_existing_header(lines, comment_start):
-            logging.debug("File already has header: %s", file_path)
-            return
-
+        # If file is empty
         if not lines:
             new_content = _process_empty_file(header_line)
         elif lines[0].startswith("#!"):
@@ -159,7 +155,13 @@ def process_file(file_path: Path, project_root: Path) -> None:
         elif _is_html_like(file_path):
             new_content = _process_html_like_file(lines, header_line, comment_start)
         else:
-            new_content = f"{header_line}\n\n" + "\n".join(lines)
+            # Check if file already has our header
+            if _has_existing_header(lines, comment_start):
+                logging.debug("File already has header: %s", file_path)
+                return
+
+            # Add header at the top with blank line after
+            new_content = f"{header_line}\n\n{content}"
 
         # Only write if content has changed
         if new_content != content:

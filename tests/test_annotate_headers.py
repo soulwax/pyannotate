@@ -14,14 +14,43 @@ def setup_and_teardown():
     if TEST_DIR.exists():
         shutil.rmtree(TEST_DIR)
     TEST_DIR.mkdir(parents=True)
-    # Create sample files
+
+    # Create sample files for basic tests
     (TEST_DIR / "valid_file.py").write_text("# Existing header\nprint('Hello, World!')\n")
     (TEST_DIR / "valid_file.js").write_text("// Old Header\nconsole.log('Hello, World!');\n")
     (TEST_DIR / "invalid_file.dat").write_text("No comments here")
+
+    # Create nested directory structure
     nested_dir = TEST_DIR / "nested"
     nested_dir.mkdir()
     (nested_dir / "valid_nested_file.sh").write_text('#!/bin/bash\necho "Nested!"\n')
+
+    # Create Qt-specific test directories
+    qt_project_dir = TEST_DIR / "qt_project"
+    qt_project_dir.mkdir()
+
+    # Create various Qt-related files
+    pro_content = """QT += core gui widgets
+TEMPLATE = app
+SOURCES += main.cpp
+"""
+    (qt_project_dir / "test.pro").write_text(pro_content)
+
+    ui_content = """<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+</ui>"""
+    (qt_project_dir / "mainwindow.ui").write_text(ui_content)
+
+    # Create binary-like files
+    binary_dir = TEST_DIR / "binary"
+    binary_dir.mkdir()
+    with open(binary_dir / "test.bin", "wb") as f:
+        f.write(b"\x00\x01\x02\x03")
+
     yield
+
+    # Cleanup after tests
     shutil.rmtree(TEST_DIR)
 
 
@@ -239,3 +268,140 @@ def test_ignored_directories():
     ignored_file = ignored_dir / "ignored_file.py"
     content = ignored_file.read_text()
     assert "File:" not in content, "Ignored directory files should not be processed"
+
+
+def test_binary_file_detection():
+    """Test the binary file detection functionality."""
+    binary_file = TEST_DIR / "test.bin"
+    with open(binary_file, "wb") as f:
+        f.write(b"\x00\x01\x02\x03")  # Write some binary content
+
+    # Process the binary file
+    process_file(binary_file, TEST_DIR)
+
+    # Content should remain unchanged
+    with open(binary_file, "rb") as f:
+        content = f.read()
+    assert content == b"\x00\x01\x02\x03", "Binary file was modified"
+
+
+def test_utf8_file_handling():
+    """Test handling of UTF-8 encoded files."""
+    utf8_file = TEST_DIR / "test_utf8.cpp"
+    content = """// Some UTF-8 content with special characters
+void showMessage() {
+    std::cout << "Hello, 世界!" << std::endl;
+}
+"""
+    utf8_file.write_text(content, encoding="utf-8")
+
+    # Process the file
+    process_file(utf8_file, TEST_DIR)
+
+    # Read and verify content
+    processed_content = utf8_file.read_text(encoding="utf-8")
+    assert "世界" in processed_content, "UTF-8 characters were not preserved"
+    assert processed_content.startswith("// File: test_utf8.cpp"), "Header not added correctly"
+    assert "Hello, 世界!" in processed_content, "Original content not preserved"
+
+
+def test_qt_project_file():
+    """Test handling of Qt project files (.pro)."""
+    pro_file = TEST_DIR / "test.pro"
+    content = """QT += core gui widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+TARGET = Waifu2x-Extension-GUI
+TEMPLATE = app
+
+SOURCES += main.cpp\\
+        mainwindow.cpp
+
+HEADERS  += mainwindow.h
+
+FORMS    += mainwindow.ui"""
+
+    pro_file.write_text(content)
+    process_file(pro_file, TEST_DIR)
+
+    processed_content = pro_file.read_text()
+    assert processed_content.startswith("# File: test.pro"), "Qt project file header not added"
+    assert "QT += core gui widgets" in processed_content, "Qt project content preserved"
+
+
+def test_qt_ui_file():
+    """Test handling of Qt UI files (.ui)."""
+    ui_file = TEST_DIR / "test.ui"
+    content = """<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+ </widget>
+</ui>"""
+
+    ui_file.write_text(content)
+    process_file(ui_file, TEST_DIR)
+
+    processed_content = ui_file.read_text()
+    assert (
+        '<?xml version="1.0" encoding="UTF-8"?>' in processed_content.splitlines()[0]
+    ), "XML declaration preserved"
+    assert "<!-- File: test.ui -->" in processed_content, "UI file header not added"
+    assert "<class>MainWindow</class>" in processed_content, "UI file content preserved"
+
+
+def test_qt_resource_file():
+    """Test handling of Qt resource files (.qrc)."""
+    qrc_file = TEST_DIR / "resources.qrc"
+    content = """<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/images">
+        <file>icon/main.png</file>
+        <file>icon/settings.png</file>
+    </qresource>
+</RCC>"""
+
+    qrc_file.write_text(content)
+    process_file(qrc_file, TEST_DIR)
+
+    processed_content = qrc_file.read_text()
+    assert "<!DOCTYPE RCC>" in processed_content.splitlines()[0], "DOCTYPE preserved"
+    assert "<!-- File: resources.qrc -->" in processed_content, "Resource file header not added"
+    assert "<RCC version=" in processed_content, "Resource file content preserved"
+
+
+# Removed duplicate test_ignored_directories as it exists in the original tests
+
+
+def test_qt_translation_file():
+    """Test that Qt translation files (.ts) are handled correctly."""
+    ts_file = TEST_DIR / "translation.ts"
+    content = """<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.1" language="zh_CN">
+    <context>
+        <name>MainWindow</name>
+        <message>
+            <source>Hello</source>
+            <translation>你好</translation>
+        </message>
+    </context>
+</TS>"""
+
+    ts_file.write_text(content, encoding="utf-8")
+    process_file(ts_file, TEST_DIR)
+
+    processed_content = ts_file.read_text(encoding="utf-8")
+    assert (
+        '<?xml version="1.0" encoding="utf-8"?>' in processed_content.splitlines()[0]
+    ), "XML declaration preserved"
+    assert "<!-- File: translation.ts -->" in processed_content, "Translation file header not added"
+    assert "<translation>你好</translation>" in processed_content, "Translation content preserved"

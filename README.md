@@ -171,38 +171,54 @@ CONFIG_FILES[".customrc"] = "//"
    git checkout -b feature/AmazingFeature
    ```
 
-3. **Install development dependencies:**
+3. **Create a virtual environment (recommended):**
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Linux/macOS
+   venv\Scripts\activate    # On Windows
+   ```
+
+4. **Install development dependencies:**
 
    ```bash
    pip install -r requirements-dev.txt
    ```
 
-4. **Make your changes.**
-5. **Run tests:**
+5. **Make your changes.**
+6. **Run tests:**
 
    ```bash
    pytest
    ```
 
-6. **Check linting:**
+7. **Check linting:**
 
    ```bash
    pylint src/pyannotate tests
    ```
 
-7. **Commit your changes:**
+   All in one:
+
+      ```bash
+      black . && pylint src/pyannotate tests > pylint.txt ; pytest --cov=pyannotate tests/ > pytest.txt
+      ```
+
+   This will run the tests, check the code style, and generate coverage reports. Make sure all tests pass and coverage is maintained, and the score is 10.00/10.00.
+
+8. **Commit your changes:**
 
    ```bash
    git commit -m 'Add amazing feature'
    ```
 
-8. **Push to the branch:**
+9. **Push to the branch:**
 
    ```bash
    git push origin feature/AmazingFeature
    ```
 
-9. **Open a Pull Request.**
+10. **Open a Pull Request.**
 
 ---
 

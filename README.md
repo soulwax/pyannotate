@@ -26,13 +26,19 @@ While the package is pending on PyPi you cannot install it via `pip install PyAn
    cd pyannotate
    ```
 
-2. **Install in editable mode:**
+2. **Install required dependencies:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Install in editable mode:**
 
    ```bash
    pip install -e .
    ```
 
-3. **Install development dependencies:**
+4. Install development dependencies (when contributing):
 
    ```bash
    pip install -r requirements-dev.txt
@@ -179,9 +185,13 @@ CONFIG_FILES[".customrc"] = "//"
    venv\Scripts\activate    # On Windows
    ```
 
-4. **Install development dependencies:**
+4. **Install dependencies:**
 
    ```bash
+   # First install required dependencies
+   pip install -r requirements.txt
+   
+   # Then install development dependencies
    pip install -r requirements-dev.txt
    ```
 

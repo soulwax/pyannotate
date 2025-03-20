@@ -5,7 +5,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Set, List, Tuple, Dict
+from typing import Dict, List, Optional, Set, Tuple
 
 
 @dataclass
@@ -21,7 +21,7 @@ class FilePattern:
 PATTERNS = [
     FilePattern([".py", ".sh", ".bash", ".ps1"], "#", ""),
     FilePattern([".js", ".jsx", ".tsx", ".c", ".cpp", ".h", ".hpp"], "//", ""),
-    FilePattern([".html", ".xml", ".svg", ".ui", ".qrc", ".ts"], "<!--", "-->"),
+    FilePattern([".html", ".xml", ".svg", ".ui", ".qrc"], "<!--", "-->"),
 ]
 
 # Define directories to ignore
@@ -245,3 +245,45 @@ def walk_directory(directory: Path, project_root: Path) -> None:
                 process_file(item, project_root)
     except OSError as e:
         logging.error("Error accessing directory %s: %s", directory, e)
+
+
+def _is_qt_translation_file(file_path: Path) -> bool:
+    """
+    Determine if a .ts file is a Qt translation file (XML-based) or TypeScript file.
+    Qt translation files typically have XML structure with TS root element.
+    """
+    if file_path.suffix.lower() != ".ts":
+        return False
+
+    try:
+        content = file_path.read_text(encoding="utf-8")
+        content_lower = content.lower()
+        # Check for XML declaration or DOCTYPE TS or <TS tags
+        return (
+            "<?xml" in content_lower
+            or "<!doctype ts" in content_lower
+            or "<ts " in content_lower
+            or "<ts>" in content_lower
+        )
+    except (OSError, UnicodeDecodeError):
+        # If we can't read the file or encounter an error, default to TypeScript
+        return False
+
+
+def _get_comment_style(file_path: Path) -> Optional[Tuple[str, str]]:
+    """Determine the appropriate comment style for a given file."""
+    # Check if it's a special config file
+    if file_path.name in CONFIG_FILES:
+        return CONFIG_FILES[file_path.name]
+
+    # Special handling for .ts files
+    if file_path.suffix.lower() == ".ts":
+        if _is_qt_translation_file(file_path):
+            return ("<!--", "-->")  # XML style for Qt translation files
+        return ("//", "")  # JavaScript style for TypeScript files
+
+    # Check file extension patterns
+    for pattern in PATTERNS:
+        if any(str(file_path).lower().endswith(ext) for ext in pattern.extensions):
+            return (pattern.comment_start, pattern.comment_end)
+    return None

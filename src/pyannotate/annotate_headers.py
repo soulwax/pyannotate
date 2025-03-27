@@ -60,10 +60,21 @@ BINARY_EXTENSIONS = {
 }
 
 # Define special config files and their comment styles as (start, end) tuples
-CONFIG_FILES: Dict[str, Tuple[str, str]] = {
+SPECIAL_FILE_COMMENTS: Dict[str, Tuple[str, str]] = {
     ".gitignore": ("#", ""),
     ".dockerignore": ("#", ""),
     ".env": ("#", ""),
+    "Makefile": ("#", ""),
+    "Dockerfile": ("#", ""),
+    "docker-compose.yml": ("#", ""),
+    "docker-compose.yaml": ("#", ""),
+    "Pipfile": ("#", ""),
+    "Pipfile.lock": ("#", ""),
+    "pyproject.toml": ("#", ""),
+    "setup.cfg": ("#", ""),
+    "setup.py": ("#", ""),
+    "requirements.txt": ("#", ""),
+    "requirements-dev.txt": ("#", ""),
 }
 
 PATTERNS.extend(
@@ -88,8 +99,8 @@ def _create_header(file_path: Path, project_root: Path) -> str:
 def _get_comment_style(file_path: Path) -> Optional[Tuple[str, str]]:
     """Determine the appropriate comment style for a given file."""
     # Check if it's a special config file
-    if file_path.name in CONFIG_FILES:
-        return CONFIG_FILES[file_path.name]
+    if file_path.name in SPECIAL_FILE_COMMENTS:
+        return SPECIAL_FILE_COMMENTS[file_path.name]
 
     # Check file extension patterns
     for pattern in PATTERNS:
@@ -273,8 +284,8 @@ def _is_qt_translation_file(file_path: Path) -> bool:
 def _get_comment_style(file_path: Path) -> Optional[Tuple[str, str]]:
     """Determine the appropriate comment style for a given file."""
     # Check if it's a special config file
-    if file_path.name in CONFIG_FILES:
-        return CONFIG_FILES[file_path.name]
+    if file_path.name in SPECIAL_FILE_COMMENTS:
+        return SPECIAL_FILE_COMMENTS[file_path.name]
 
     # Special handling for .ts files
     if file_path.suffix.lower() == ".ts":

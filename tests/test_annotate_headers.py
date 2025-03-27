@@ -1,7 +1,9 @@
 # File: tests/test_annotate_headers.py
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 import pytest
+
 from pyannotate.annotate_headers import _get_comment_style, process_file, walk_directory
 
 # Directory for temporary test files
@@ -405,3 +407,35 @@ def test_qt_translation_file():
     ), "XML declaration preserved"
     assert "<!-- File: translation.ts -->" in processed_content, "Translation file header not added"
     assert "<translation>你好</translation>" in processed_content, "Translation content preserved"
+
+
+# test Makefile
+def test_makefile():
+    """Test processing Makefiles."""
+    makefile = TEST_DIR / "Makefile"
+    makefile_content = """# Makefile for sample project
+CC = gcc
+CFLAGS = -Wall -g
+TARGET = sample
+OBJS = main.o functions.o
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+\t$(CC) $(CFLAGS) -o $@ $^
+
+%.o: %.c
+\t$(CC) $(CFLAGS) -c $<
+
+clean:
+\trm -f $(TARGET) $(OBJS)
+"""
+    makefile.write_text(makefile_content)
+    process_file(makefile, TEST_DIR)
+    processed_content = makefile.read_text()
+    assert processed_content.startswith(
+        "# File: Makefile\n"
+    ), "Header not added correctly for Makefile"
+    assert "CC = gcc" in processed_content, "Makefile content preserved"
+    assert "clean:" in processed_content, "Makefile content preserved"
+    assert "rm -f" in processed_content, "Makefile content preserved"

@@ -108,7 +108,7 @@ Suffice to say there is more to come.
 PyAnnotate automatically detects most common file types but also offers flexible customization options. Changes can be made by modifying the following constants:
 
 ```python
-from pyannotate import PATTERNS, IGNORED_DIRS, CONFIG_FILES
+from pyannotate import PATTERNS, IGNORED_DIRS, SPECIAL_FILE_COMMENTS
 
 # Add custom file types
 PATTERNS.append(FilePattern([".custom"], "//"))
@@ -116,8 +116,8 @@ PATTERNS.append(FilePattern([".custom"], "//"))
 # Extend ignored directories
 IGNORED_DIRS.add("custom_modules")
 
-# Define specific configuration files
-CONFIG_FILES[".customrc"] = "//"
+# Define specific files with unique comment styles (e.g., `.customrc`)
+SPECIAL_FILE_COMMENTS[".customrc"] = "//"
 ```
 
 ---

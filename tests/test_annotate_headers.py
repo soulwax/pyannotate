@@ -409,27 +409,47 @@ def test_qt_translation_file():
     assert "<translation>你好</translation>" in processed_content, "Translation content preserved"
 
 
-# test Makefile
-def test_makefile():
-    """Test processing Makefiles."""
+# Split the former large test_special_config_files function into two smaller functions
+# for better readability and to satisfy pylint
+
+
+def test_special_config_files_part1():
+    """Test processing of basic configuration files defined in SPECIAL_FILE_COMMENTS."""
+    # Test .gitignore
+    gitignore_file = TEST_DIR / ".gitignore"
+    gitignore_content = """# Ignore these files
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+"""
+    gitignore_file.write_text(gitignore_content)
+    process_file(gitignore_file, TEST_DIR)
+    processed_content = gitignore_file.read_text()
+    assert processed_content.startswith(
+        "# File: .gitignore"
+    ), "Header not added correctly for .gitignore"
+    assert "# Ignore these files" in processed_content, "Original content preserved"
+
+    # Test Makefile
     makefile = TEST_DIR / "Makefile"
     makefile_content = """# Makefile for sample project
-CC = gcc
-CFLAGS = -Wall -g
-TARGET = sample
-OBJS = main.o functions.o
+    CC = gcc
+    CFLAGS = -Wall -g
+    TARGET = sample
+    OBJS = main.o functions.o
 
-all: $(TARGET)
+    all: $(TARGET)
 
-$(TARGET): $(OBJS)
-\t$(CC) $(CFLAGS) -o $@ $^
+    $(TARGET): $(OBJS)
+    \t$(CC) $(CFLAGS) -o $@ $^
 
-%.o: %.c
-\t$(CC) $(CFLAGS) -c $<
+    %.o: %.c
+    \t$(CC) $(CFLAGS) -c $<
 
-clean:
-\trm -f $(TARGET) $(OBJS)
-"""
+    clean:
+    \trm -f $(TARGET) $(OBJS)
+    """
     makefile.write_text(makefile_content)
     process_file(makefile, TEST_DIR)
     processed_content = makefile.read_text()
@@ -439,3 +459,163 @@ clean:
     assert "CC = gcc" in processed_content, "Makefile content preserved"
     assert "clean:" in processed_content, "Makefile content preserved"
     assert "rm -f" in processed_content, "Makefile content preserved"
+
+    # Test .env file
+    env_file = TEST_DIR / ".env"
+    env_content = """# Environment variables
+DEBUG=True
+SECRET_KEY=test_key
+DATABASE_URL=sqlite:///db.sqlite3
+"""
+    env_file.write_text(env_content)
+    process_file(env_file, TEST_DIR)
+    processed_content = env_file.read_text()
+    assert processed_content.startswith("# File: .env"), "Header not added correctly for .env file"
+    assert "DEBUG=True" in processed_content, "Environment variable content preserved"
+
+    # Test pyproject.toml
+    pyproject_file = TEST_DIR / "pyproject.toml"
+    pyproject_content = """[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+"""
+    pyproject_file.write_text(pyproject_content)
+    process_file(pyproject_file, TEST_DIR)
+    processed_content = pyproject_file.read_text()
+    assert processed_content.startswith(
+        "# File: pyproject.toml"
+    ), "Header not added correctly for pyproject.toml"
+    assert "[build-system]" in processed_content, "TOML content preserved"
+
+
+def test_special_config_files_part2():
+    """Test processing of additional configuration files defined in SPECIAL_FILE_COMMENTS."""
+    # Test setup.py
+    setup_file = TEST_DIR / "setup.py"
+    setup_content = """# Package setup
+from setuptools import setup, find_packages
+
+setup(
+    name="example",
+    version="0.1.0",
+    packages=find_packages(),
+)
+"""
+    setup_file.write_text(setup_content)
+    process_file(setup_file, TEST_DIR)
+    processed_content = setup_file.read_text()
+    assert processed_content.startswith(
+        "# File: setup.py"
+    ), "Header not added correctly for setup.py"
+    assert "from setuptools import" in processed_content, "Python setup content preserved"
+
+    # Test requirements.txt
+    requirements_file = TEST_DIR / "requirements.txt"
+    requirements_content = """# Dependencies
+setuptools>=45
+wheel>=0.37
+pytest>=7.0.0
+"""
+    requirements_file.write_text(requirements_content)
+    process_file(requirements_file, TEST_DIR)
+    processed_content = requirements_file.read_text()
+    assert processed_content.startswith(
+        "# File: requirements.txt"
+    ), "Header not added correctly for requirements.txt"
+    assert "setuptools>=45" in processed_content, "Requirements content preserved"
+
+    # Test Dockerfile
+    dockerfile = TEST_DIR / "Dockerfile"
+    dockerfile_content = """FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY . .
+RUN pip install -e .
+
+CMD ["python", "-m", "pyannotate"]
+"""
+    dockerfile.write_text(dockerfile_content)
+    process_file(dockerfile, TEST_DIR)
+    processed_content = dockerfile.read_text()
+    assert processed_content.startswith(
+        "# File: Dockerfile"
+    ), "Header not added correctly for Dockerfile"
+    assert "FROM python:3.10-slim" in processed_content, "Dockerfile content preserved"
+
+    # Test docker-compose.yml
+    compose_file = TEST_DIR / "docker-compose.yml"
+    compose_content = """version: '3'
+
+services:
+  app:
+    build: .
+    volumes:
+      - .:/app
+    command: python -m pyannotate
+"""
+    compose_file.write_text(compose_content)
+    process_file(compose_file, TEST_DIR)
+    processed_content = compose_file.read_text()
+    assert processed_content.startswith(
+        "# File: docker-compose.yml"
+    ), "Header not added correctly for docker-compose.yml"
+    assert "version: '3'" in processed_content, "YAML content preserved"
+
+
+# Second fix: Update the test_mixed_special_files function to use .items()
+def test_mixed_special_files():
+    """Test processing mixed types of special files in a single directory."""
+    # Create a mix of different special configuration files
+    config_dir = TEST_DIR / "config"
+    config_dir.mkdir(exist_ok=True)
+
+    # Create several config files
+    files_and_content = {
+        ".editorconfig": """# EditorConfig is awesome
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+""",
+        ".gitattributes": """*.txt text eol=lf
+*.bin binary
+""",
+        ".flake8": """[flake8]
+max-line-length = 100
+exclude = .git,__pycache__,build,dist
+""",
+        "Pipfile": """[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = "*"
+""",
+    }
+
+    # Write the files
+    for filename, content in files_and_content.items():
+        file_path = config_dir / filename
+        file_path.write_text(content)
+
+    # Process the directory
+    walk_directory(config_dir, TEST_DIR)
+
+    # Verify each file has the correct header
+    for filename, content in files_and_content.items():
+        file_path = config_dir / filename
+        file_content = file_path.read_text()
+        assert file_content.startswith(
+            f"# File: config/{filename}"
+        ), f"Header not added correctly for {filename}"
+
+        # Verify original content is preserved (check first non-empty line after header)
+        lines = file_content.splitlines()
+        original_first_line = [line for line in lines[2:] if line.strip()][0]
+        assert original_first_line in content, f"Original content not preserved in {filename}"

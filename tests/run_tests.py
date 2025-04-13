@@ -1,4 +1,5 @@
 # File: tests/run_tests.py
+
 """
 Automated test script for PyAnnotate.
 Runs code formatting, linting, and tests in one command.

@@ -1,4 +1,5 @@
 # File: src/pyannotate/annotate_headers.py
+
 """Core functionality for adding and updating file headers."""
 
 import logging

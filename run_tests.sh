@@ -1,6 +1,5 @@
 #!/bin/bash
-# run_tests.sh - Unix/Linux/macOS script to automate tests for PyAnnotate
-
+# File: run_tests.sh
 echo "=== PyAnnotate Test Runner (Unix) ==="
 
 # Check if Python is in the path

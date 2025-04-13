@@ -1,4 +1,5 @@
 <script setup>
+<!-- File: tests/sample_web_files/vue/SetupComponent.vue -->
 import { ref, onMounted } from 'vue'
 
 const count = ref(0)

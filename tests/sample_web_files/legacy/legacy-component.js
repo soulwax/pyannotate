@@ -1,4 +1,4 @@
-// Filename: legacy-component.js
+// File: tests/sample_web_files/legacy/legacy-component.js
 // Author: Legacy Developer
 // Created: 2022-01-01
 // Version: 1.0.0

@@ -1,4 +1,5 @@
 # File: src/pyannotate/cli.py
+
 """CLI interface for PyAnnotate."""
 
 import argparse

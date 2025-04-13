@@ -1,3 +1,5 @@
+// File: tests/sample_web_files/react/Counter.jsx
+
 import React, { useState, useEffect } from 'react';
 
 function Counter() {

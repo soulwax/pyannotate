@@ -1,3 +1,5 @@
+REM File: run_tests.bat
+
 @echo off
 REM run_tests.bat - Windows script to automate tests for PyAnnotate
 

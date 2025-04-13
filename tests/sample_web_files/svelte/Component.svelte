@@ -1,3 +1,5 @@
+<!-- File: tests/sample_web_files/svelte/Component.svelte -->
+
 <script>
   export let name = 'world';
   let count = 0;

@@ -1,4 +1,5 @@
 # File: tests/test_enhanced_headers.py
+
 """Tests for the enhanced header handling functionality."""
 
 import os

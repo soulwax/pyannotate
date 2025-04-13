@@ -357,7 +357,7 @@ def test_has_existing_header():
         # Check if our function can detect each format
         assert _has_existing_header([header], "#"), f"Failed to detect header: {header}"
 
-    # Test non-header content
+    # Test non-header content - these should not be detected as headers
     non_headers = [
         "# Import statements",
         "# Copyright 2023",
@@ -370,6 +370,17 @@ def test_has_existing_header():
         assert not _has_existing_header(
             [non_header], "#"
         ), f"Incorrectly detected header: {non_header}"
+
+    # But a file with the primary header and metadata should be detected
+    combined_headers = [
+        ["# File: test.py", "# Author: John Doe"],
+        ["# Filename: test.js", "# Version: 1.0.0"],
+    ]
+
+    for header_lines in combined_headers:
+        assert _has_existing_header(
+            header_lines, "#"
+        ), f"Failed to detect valid header with metadata"
 
 
 def test_remove_existing_header():
@@ -462,7 +473,6 @@ def test_svelte_file():
 def test_astro_file():
     """Test processing Astro files."""
     astro_file = TEST_DIR / "astro" / "Component.astro"
-
     # Process the file
     process_file(astro_file, TEST_DIR)
 
@@ -477,7 +487,6 @@ def test_astro_file():
 def test_react_jsx_file():
     """Test processing React JSX files."""
     react_file = TEST_DIR / "react" / "Counter.jsx"
-
     # Process the file
     process_file(react_file, TEST_DIR)
 
@@ -491,19 +500,39 @@ def test_different_header_formats():
     """Test handling files with different header formats than our standard."""
     # Test JS file with non-standard header
     js_file = TEST_DIR / "legacy" / "legacy-component.js"
+    # Save original content for comparison
+    original_content = js_file.read_text()
+    assert (
+        "// Version: 1.0.0" in original_content
+    ), "Test setup: Version info missing in original file"
 
     # Process the file
     process_file(js_file, TEST_DIR)
 
     # Verify the header was replaced with our format but preserved information
     processed = js_file.read_text()
+
+    # Debug output if test fails
+    if not processed.startswith("// File: legacy/legacy-component.js"):
+        print("\nExpected header not found. Actual content starts with:")
+        print(processed[:100])
+
+    if "// Version: 1.0.0" not in processed:
+        print("\nVersion info not preserved. Header content:")
+        header_lines = [line for line in processed.splitlines()[:10] if line.strip()]
+        print("\n".join(header_lines))
+
+    # Check file header format and preserved metadata
     assert processed.startswith(
         "// File: legacy/legacy-component.js"
     ), "Header not converted to our format"
     assert "// Author: Legacy Developer" in processed, "Author information not preserved"
     assert "// Created: 2022-01-01" in processed, "Creation date not preserved"
     assert "// Version: 1.0.0" in processed, "Version info not preserved"
+
+    # Check that actual content is preserved
     assert "class LegacyComponent" in processed, "Class content preserved"
+    assert "incrementCount()" in processed, "Method content preserved"
 
     # Test CSS file with non-standard header
     css_file = TEST_DIR / "legacy" / "styles.css"
@@ -519,11 +548,14 @@ def test_different_header_formats():
     assert "Description: Main stylesheet" in processed, "Description not preserved"
     assert "Author: Design Team" in processed, "Author information not preserved"
 
+    # Check that CSS content is preserved
+    assert ":root {" in processed, "CSS root block preserved"
+    assert "--primary-color: #4a90e2;" in processed, "CSS variables preserved"
+
 
 def test_html_doctype_handling():
     """Test that HTML DOCTYPE declarations are properly preserved."""
     html_file = TEST_DIR / "html" / "index.html"
-
     # Process the file
     process_file(html_file, TEST_DIR)
 
@@ -549,29 +581,22 @@ def test_skipped_file_types():
     # Create markdown and JSON files
     md_file = TEST_DIR / "README.md"
     json_file = TEST_DIR / "config.json"
-
     md_content = """# Project Title
-
-A simple project description.
-
-## Installation
-
-Installation instructions here.
-"""
-
+    A simple project description.
+    Installation
+    Installation instructions here.
+    """
     json_content = """{
-  "name": "test-project",
-  "version": "1.0.0",
-  "description": "A test project"
-}"""
-
+    "name": "test-project",
+    "version": "1.0.0",
+    "description": "A test project"
+    }"""
     md_file.write_text(md_content)
     json_file.write_text(json_content)
 
     # Process the files
     process_file(md_file, TEST_DIR)
     process_file(json_file, TEST_DIR)
-
     # Verify the content is unchanged (markdown and JSON files should be skipped)
     assert md_file.read_text() == md_content, "Markdown file was modified but should be skipped"
     assert json_file.read_text() == json_content, "JSON file was modified but should be skipped"

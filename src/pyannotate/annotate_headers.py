@@ -314,6 +314,10 @@ def _create_header_line(comment_start: str, comment_end: str, header: str) -> st
     return f"{comment_start} {header}"
 
 
+# Here are the key functions that need to be replaced in annotate_headers.py:
+
+
+# 1. Replace _has_existing_header
 def _has_existing_header(lines: List[str], comment_start: str, start_index: int = 0) -> bool:
     """
     Check if file has an existing header at the specified start index.
@@ -322,7 +326,7 @@ def _has_existing_header(lines: List[str], comment_start: str, start_index: int 
     if not lines[start_index:]:
         return False
 
-    # Check first few lines for existing headers
+    # Check first few lines for existing headers - these are definite indicators
     header_indicators = [
         f"{comment_start} File:",  # Our standard format
         f"{comment_start}File:",  # No space after comment
@@ -333,13 +337,303 @@ def _has_existing_header(lines: List[str], comment_start: str, start_index: int 
         f"{comment_start} Path:",  # Alternative format
     ]
 
-    # Check the first few lines (up to 5) for any header pattern
-    for i in range(start_index, min(start_index + 5, len(lines))):
+    # Look for these indicators only in the first line or two
+    for i in range(start_index, min(start_index + 2, len(lines))):
         line = lines[i].strip()
         if any(line.startswith(indicator) for indicator in header_indicators):
             return True
 
+    # If we reach here, we didn't find a primary header indicator
     return False
+
+
+# 2. Replace _merge_headers
+def _merge_headers(
+    existing_header: str, new_header: str, comment_start: str, comment_end: str
+) -> str:
+    """
+    Intelligently merge an existing header with our new header.
+    Preserves useful information from the existing header while ensuring our format is used.
+
+    Args:
+        existing_header: The existing header content
+        new_header: Our new header content
+        comment_start: Comment start marker
+        comment_end: Comment end marker
+
+    Returns:
+        Merged header string
+    """
+    # Extract file path from our new header
+    file_path = new_header.replace("File:", "").strip()
+
+    # Split existing header into lines
+    existing_lines = existing_header.strip().split("\n")
+
+    # Create our standard header line
+    standard_header = f"{comment_start} File: {file_path}"
+    if comment_end:
+        standard_header += f" {comment_end}"
+
+    # Identify header line vs. metadata lines
+    metadata_lines = []
+
+    for line in existing_lines:
+        line = line.strip()
+        # Skip empty lines
+        if not line:
+            continue
+
+        # Check if this is a file path line (to exclude)
+        is_file_path_line = False
+        for keyword in ["file:", "filename:", "path:", "@file"]:
+            if keyword in line.lower() and line.lower().index(keyword) < 15:
+                is_file_path_line = True
+                break
+
+        # If not a file path line, treat as metadata if it starts with a comment
+        if not is_file_path_line and line.startswith(comment_start):
+            # Analyze the line to extract metadata
+            metadata_text = line[len(comment_start) :].strip()
+            if comment_end and comment_end in metadata_text:
+                metadata_text = metadata_text[: metadata_text.rfind(comment_end)].strip()
+
+            # Only keep non-empty metadata
+            if metadata_text:
+                # Rebuild the comment with our style
+                if comment_end:
+                    metadata_lines.append(f"{comment_start} {metadata_text} {comment_end}")
+                else:
+                    metadata_lines.append(f"{comment_start} {metadata_text}")
+
+    # Build the new header with our standard format followed by preserved metadata
+    if metadata_lines:
+        result = standard_header + "\n" + "\n".join(metadata_lines)
+    else:
+        result = standard_header
+
+    return result
+
+
+# 3. Replace process_file
+def process_file(file_path: Path, project_root: Path) -> None:
+    """Process a single file, adding or updating its header."""
+    if not file_path.is_file():
+        logging.warning("File not found: %s", file_path)
+        return
+
+    # Skip files we want to leave alone
+    if file_path.suffix.lower() in {".md", ".markdown", ".json"} or (
+        file_path.name.lower() == "license" and not file_path.suffix
+    ):
+        logging.debug("Skipping documentation file: %s", file_path)
+        return
+
+    # Skip binary files
+    if file_path.suffix.lower() in BINARY_EXTENSIONS or is_binary(file_path):
+        logging.debug("Skipping binary file: %s", file_path)
+        return
+
+    # Get the comment style for the file
+    comment_style = _get_comment_style(file_path)
+    if not comment_style:
+        logging.debug("Skipping unsupported file type: %s", file_path)
+        return
+
+    comment_start, comment_end = comment_style
+
+    try:
+        # Try UTF-8 first
+        try:
+            content = file_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            # Fall back to system default encoding if UTF-8 fails
+            content = file_path.read_text()
+
+        # Create the header
+        header = _create_header(file_path, project_root)
+        header_line = _create_header_line(comment_start, comment_end, header)
+        lines = content.splitlines()
+
+        # Initialize new_content with default value
+        new_content = None
+
+        # Check for metadata in the first few lines (special case for legacy files)
+        metadata_lines = []
+
+        # Look at up to the first 10 lines for metadata
+        for i in range(min(10, len(lines))):
+            line = lines[i].strip()
+            # Skip empty lines
+            if not line:
+                continue
+
+            # If line starts with a comment and contains metadata
+            if line.startswith(comment_start) and any(
+                keyword in line.lower()
+                for keyword in ["author:", "version:", "copyright:", "created:", "description:"]
+            ):
+                metadata_lines.append(lines[i])  # Keep original formatting
+
+        # Determine how to process the file
+        if not lines:
+            new_content = _process_empty_file(header_line)
+        elif lines[0].startswith("#!"):
+            new_content = _process_shebang_file(lines, header_line, comment_start)
+        elif _is_special_xml_file(file_path):
+            new_content = _process_xml_like_file(lines, header_line, comment_start)
+        elif file_path.suffix.lower() in {".vue", ".svelte", ".astro"}:
+            new_content = _process_web_framework_file(file_path, lines, header_line, comment_start)
+        elif _has_existing_header(lines, comment_start):
+            # Detect the existing header pattern
+            existing_pattern = _detect_header_pattern(file_path)
+            if existing_pattern:
+                # We have a different header pattern - let's replace it properly
+                detected_start, detected_end, pattern = existing_pattern
+
+                # Use header lines + metadata if available
+                header_content = "\n".join(lines[:10])  # Use first 10 lines to find header content
+                merged_header = _merge_headers(header_content, header, comment_start, comment_end)
+
+                # Remove the old header
+                remaining_content = _remove_existing_header(lines, comment_start)
+                new_content = merged_header + "\n\n" + "\n".join(remaining_content)
+            else:
+                # Header exists but we couldn't detect its pattern - just log and return
+                logging.debug("File already has header: %s", file_path)
+                return
+        elif metadata_lines:
+            # Special case: File has metadata but no standard header format
+            # Create a header that includes both our standard format and the metadata
+            combined_header = header_line + "\n" + "\n".join(metadata_lines)
+
+            # Remove metadata lines from content
+            metadata_strings = [line.strip() for line in metadata_lines]
+            remaining_lines = []
+            skip_next = False
+
+            for i, line in enumerate(lines):
+                if skip_next:
+                    skip_next = False
+                    continue
+
+                if line.strip() in metadata_strings:
+                    # If we find a metadata line, also check if next line is empty and skip it
+                    if i + 1 < len(lines) and not lines[i + 1].strip():
+                        skip_next = True
+                    continue
+
+                remaining_lines.append(line)
+
+            new_content = combined_header + "\n\n" + "\n".join(remaining_lines)
+        else:
+            # Default case: add header to the top of the file
+            new_content = f"{header_line}\n\n{content}"
+
+        # Only write if new_content is set and different from original content
+        if new_content is not None and new_content != content:
+            # Write with the same encoding we read with
+            file_path.write_text(new_content, encoding="utf-8")
+            logging.info("Updated header in: %s", file_path)
+        else:
+            logging.debug("No changes needed for: %s", file_path)
+
+    except (OSError, UnicodeDecodeError) as e:
+        logging.debug("Failed to process %s: %s", file_path, e)
+
+
+# 4. Update the test_has_existing_header function in test_enhanced_headers.py
+def test_has_existing_header():
+    """Test enhanced existing header detection."""
+    # Test various header formats
+    header_formats = [
+        "# File: test.py",
+        "#File: test.py",  # No space
+        "# file: test.py",  # Lowercase "file"
+        "# Filename: test.py",
+        "# @file test.py",
+        "# Source: test.py",
+        "# Path: test.py",
+    ]
+
+    for header in header_formats:
+        # Check if our function can detect each format
+        assert _has_existing_header([header], "#"), f"Failed to detect header: {header}"
+
+    # Test non-header content - these should not be detected as headers
+    non_headers = [
+        "# Import statements",
+        "# Copyright 2023",
+        "# Author: John Doe",
+        "",
+        "import sys",
+    ]
+
+    for non_header in non_headers:
+        assert not _has_existing_header(
+            [non_header], "#"
+        ), f"Incorrectly detected header: {non_header}"
+
+
+def _detect_header_pattern(file_path: Path) -> Optional[Tuple[str, str, str]]:
+    """
+    Analyze a file to detect any existing header pattern.
+
+    Returns:
+        Tuple containing (detected comment start, detected comment end, header pattern)
+        or None if no pattern is detected.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f.readlines()[:10]]  # Read first 10 lines
+
+        if not lines:
+            return None
+
+        # Common comment markers
+        markers = [
+            ("#", ""),
+            ("//", ""),
+            ("/*", "*/"),
+            ("<!--", "-->"),
+            ("%", ""),  # LaTeX
+            (";", ""),  # Assembly, INI
+            ("--", ""),  # SQL, Haskell
+            ("REM", ""),  # Batch
+        ]
+
+        # Check each marker against the first few non-empty lines
+        for start, end in markers:
+            for line in lines:
+                if not line:
+                    continue
+
+                # Check if line starts with comment marker
+                if line.startswith(start):
+                    # Look for common header keywords
+                    remaining_text = line[len(start) :].strip().lower()
+                    for keyword in ["file:", "source:", "path:", "filename:", "@file"]:
+                        if keyword in remaining_text:
+                            idx = remaining_text.find(keyword)
+                            pattern = remaining_text[: idx + len(keyword)]
+                            return start, end, pattern
+
+                    # Also look for metadata keywords that indicate headers
+                    for keyword in [
+                        "author:",
+                        "copyright:",
+                        "version:",
+                        "created:",
+                        "description:",
+                    ]:
+                        if keyword in remaining_text:
+                            # If we have metadata but no explicit file marker, assume standard format
+                            return start, end, "file:"
+
+        return None
+
+    except (UnicodeDecodeError, IOError):
+        return None
 
 
 def _remove_existing_header(
@@ -448,34 +742,36 @@ def _merge_headers(
     if comment_end:
         standard_header += f" {comment_end}"
 
-    # Filter out lines from existing header that would conflict with our file path
-    preserved_lines = []
+    # Identify header line vs. metadata lines
+    header_line = None
+    metadata_lines = []
+
     for line in existing_lines:
         line = line.strip()
-        # Skip empty lines and lines containing file path information
-        if not line or any(keyword in line.lower() for keyword in ["file:", "filename:", "path:"]):
+        # Skip empty lines
+        if not line:
             continue
-        # Keep other comment lines that might have useful information
-        if line.startswith(comment_start):
-            # Clean up the line if it has comment end markers
-            if comment_end and comment_end in line:
-                line = line[: line.find(comment_end)].strip()
-            # Remove comment start for clean formatting
-            line = line[len(comment_start) :].strip()
-            preserved_lines.append(line)
 
-    # If we have preserved lines, construct a multi-line header
-    if preserved_lines:
-        result = standard_header + "\n"
-        for line in preserved_lines:
-            if comment_end:
-                result += f"{comment_start} {line} {comment_end}\n"
-            else:
-                result += f"{comment_start} {line}\n"
-        return result
+        # Check if this is a file path line
+        is_file_path_line = False
+        for keyword in ["file:", "filename:", "path:", "@file"]:
+            if keyword in line.lower() and comment_start in line[:10]:
+                is_file_path_line = True
+                header_line = line
+                break
 
-    # Otherwise just return our standard header
-    return standard_header
+        # If not a file path line, treat as metadata
+        if not is_file_path_line and line.startswith(comment_start):
+            metadata_lines.append(line)
+
+    # Build the new header
+    result = standard_header + "\n"
+
+    # Add all metadata lines
+    for line in metadata_lines:
+        result += line + "\n"
+
+    return result.rstrip()
 
 
 def _process_empty_file(header_line: str) -> str:
@@ -681,6 +977,35 @@ def process_file(file_path: Path, project_root: Path) -> None:
         header_line = _create_header_line(comment_start, comment_end, header)
         lines = content.splitlines()
 
+        # Initialize new_content with default value
+        new_content = None
+
+        # Check for metadata in the first few lines (special case for legacy files)
+        metadata_lines = []
+        in_metadata_block = False
+
+        # Look at up to the first 10 lines for metadata
+        for i in range(min(10, len(lines))):
+            line = lines[i].strip()
+            # Skip empty lines
+            if not line:
+                continue
+
+            # If line starts with a comment and contains metadata
+            if line.startswith(comment_start) and any(
+                keyword in line.lower()
+                for keyword in ["author:", "version:", "copyright:", "created:", "description:"]
+            ):
+                metadata_lines.append(line)
+                in_metadata_block = True
+            elif in_metadata_block and line.startswith(comment_start):
+                # Continue collecting metadata if we're in a block of commented lines
+                metadata_lines.append(line)
+            else:
+                # Stop once we hit non-comment or non-metadata content
+                if in_metadata_block:
+                    break
+
         # Determine how to process the file
         if not lines:
             new_content = _process_empty_file(header_line)
@@ -696,26 +1021,48 @@ def process_file(file_path: Path, project_root: Path) -> None:
             if existing_pattern:
                 # We have a different header pattern - let's replace it properly
                 detected_start, detected_end, pattern = existing_pattern
-                existing_header = "\n".join(lines[:3])  # Take first few lines as the header
-                new_content = _merge_headers(existing_header, header, comment_start, comment_end)
-                new_content += "\n\n" + "\n".join(_remove_existing_header(lines, detected_start))
+
+                # Use up to 10 lines to capture multiline headers
+                header_lines = []
+                for i in range(min(10, len(lines))):
+                    line = lines[i].strip()
+                    if line and line.startswith(comment_start):
+                        header_lines.append(lines[i])
+                    elif not line:
+                        continue
+                    else:
+                        break
+
+                existing_header = "\n".join(header_lines)
+                merged_header = _merge_headers(existing_header, header, comment_start, comment_end)
+                new_content = (
+                    merged_header
+                    + "\n\n"
+                    + "\n".join(_remove_existing_header(lines, detected_start))
+                )
             else:
                 # Header exists but we couldn't detect its pattern - just log and return
                 logging.debug("File already has header: %s", file_path)
                 return
+        elif metadata_lines:
+            # Special case: File has metadata but no standard header format
+            # Create a header that includes both our standard format and the metadata
+            combined_header = header_line + "\n" + "\n".join(metadata_lines)
+            remaining_lines = [
+                line for line in lines if line.strip() not in [l.strip() for l in metadata_lines]
+            ]
+            new_content = combined_header + "\n\n" + "\n".join(remaining_lines)
         else:
+            # Default case: add header to the top of the file
             new_content = f"{header_line}\n\n{content}"
 
-        # Only write if there are changes
-        if new_content != content:
+        # Only write if new_content is set and different from original content
+        if new_content is not None and new_content != content:
             # Write with the same encoding we read with
             file_path.write_text(new_content, encoding="utf-8")
             logging.info("Updated header in: %s", file_path)
         else:
             logging.debug("No changes needed for: %s", file_path)
-
-    except (OSError, UnicodeDecodeError) as e:
-        logging.debug("Failed to process %s: %s", file_path, e)
 
     except (OSError, UnicodeDecodeError) as e:
         logging.debug("Failed to process %s: %s", file_path, e)

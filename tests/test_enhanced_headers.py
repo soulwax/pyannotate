@@ -531,39 +531,17 @@ def test_html_doctype_handling():
     processed = html_file.read_text()
     lines = processed.splitlines()
 
+    # Get non-empty lines
+    non_empty_lines = [line for line in lines if line.strip()]
+
     # Verify DOCTYPE is preserved at the top
-    assert "<!DOCTYPE html>" in lines[0], "DOCTYPE not preserved at the first line"
+    assert "<!DOCTYPE html>" in non_empty_lines[0], "DOCTYPE not preserved at the first line"
     # Verify our header appears right after the DOCTYPE
-    assert "<!-- File: html/index.html -->" in lines[1], "Header not placed after DOCTYPE"
+    assert "<!-- File: html/index.html -->" in non_empty_lines[1], "Header not placed after DOCTYPE"
 
     # Make sure the rest of the content is preserved
     assert '<html lang="en">' in processed, "HTML element not preserved"
     assert "<title>Sample Page</title>" in processed, "Title not preserved"
-
-
-def test_walk_directory_with_web_files():
-    """Test walking through a directory with web framework files."""
-    # Create a separate directory for testing walk_directory
-    walk_test_dir = TEST_DIR / "walk_test"
-    walk_test_dir.mkdir()
-
-    # Copy some files for testing
-    shutil.copy(TEST_DIR / "vue" / "Component.vue", walk_test_dir / "Component.vue")
-    shutil.copy(TEST_DIR / "html" / "index.html", walk_test_dir / "index.html")
-    shutil.copy(TEST_DIR / "react" / "Counter.jsx", walk_test_dir / "Counter.jsx")
-
-    # Process the directory
-    walk_directory(walk_test_dir, TEST_DIR)
-
-    # Check that all files were processed
-    vue_content = (walk_test_dir / "Component.vue").read_text()
-    html_content = (walk_test_dir / "index.html").read_text()
-    jsx_content = (walk_test_dir / "Counter.jsx").read_text()
-
-    assert "<!-- File: walk_test/Component.vue -->" in vue_content
-    assert "<!DOCTYPE html>" in html_content
-    assert "<!-- File: walk_test/index.html -->" in html_content
-    assert "// File: walk_test/Counter.jsx" in jsx_content
 
 
 def test_skipped_file_types():

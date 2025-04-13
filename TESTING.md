@@ -22,19 +22,19 @@ pip install -r requirements-dev.txt
 
 #### On Windows
 
-```
+```powershell
 run_tests.bat
 ```
 
 #### On Unix/Linux/macOS
 
-```
+```sh
 ./run_tests.sh
 ```
 
 Or directly with Python:
 
-```
+```sh
 python run_tests.py
 ```
 

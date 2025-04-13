@@ -7,7 +7,16 @@ write_to = "src/pyannotate/_version.py"
 
 [tool.black]
 line-length = 100
-target-version = ['py36', 'py37', 'py38', 'py39', 'py310', 'py311']
+target-version = [
+    'py36',
+    'py37',
+    'py38',
+    'py39',
+    'py310',
+    'py311',
+    'py312',
+    'py313',
+]
 
 [tool.isort]
 profile = "black"
@@ -23,6 +32,11 @@ disable = [
     "R0914", # Too many local variables
     "C0103", # Invalid name
     "C0209", # Consider using f-string
+    "R0911", # Too many return statements
+    "R0912", # Too many branches
+    "R1702", # Too many nested blocks
+    "W0612", # Unused variable
+    "W0705", # Catching previously caught exception type
 ]
 
 [tool.pylint.format]
@@ -35,7 +49,4 @@ good-names = ["i", "j", "k", "ex", "Run", "_", "fp", "id"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "--cov=pyannotate"
-pythonpath = [
-    ".",
-    "src",
-]
+pythonpath = [".", "src"]

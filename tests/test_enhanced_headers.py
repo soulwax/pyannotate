@@ -13,7 +13,6 @@ from pyannotate.annotate_headers import (
     _merge_headers,
     _remove_existing_header,
     process_file,
-    walk_directory,
 )
 
 # Directory for temporary test files
@@ -229,18 +228,18 @@ def _create_web_framework_test_files():
                 </ul>
             </nav>
         </header>
-        
+
         <main>
             <section>
                 <h2>Main Content</h2>
                 <p>This is a sample HTML page for testing the PyAnnotate tool.</p>
             </section>
         </main>
-        
+
         <footer>
             <p>&copy; 2025 PyAnnotate Example</p>
         </footer>
-        
+
         <script src="main.js"></script>
     </body>
     </html>

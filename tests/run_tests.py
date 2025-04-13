@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# File: run_tests.py
+# File: tests/run_tests.py
 """
 Automated test script for PyAnnotate.
 Runs code formatting, linting, and tests in one command.
@@ -16,10 +15,10 @@ def run_command(cmd, output_file=None):
     print(f"Running: {' '.join(cmd)}")
 
     if output_file:
-        with open(output_file, "w") as f:
-            result = subprocess.run(cmd, stdout=f, stderr=f, text=True)
+        with open(output_file, "w", encoding="utf-8") as f:
+            result = subprocess.run(cmd, stdout=f, stderr=f, text=True, check=False)
     else:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
     return result
 
@@ -46,21 +45,19 @@ def run_lint():
     result = run_command(["pylint", "src", "tests"], pylint_out)
 
     # We don't fail on lint errors, just report them
-    with open(pylint_out, "r") as f:
+    with open(pylint_out, "r", encoding="utf-8") as f:
         content = f.read()
 
     if "Your code has been rated at 10.00/10" in content:
         print("Linting successful - Perfect score!")
         return True
+
+    score_line = [line for line in content.splitlines() if "Your code has been rated at" in line]
+    if score_line:
+        print(f"Linting issues found: {score_line[0]}")
     else:
-        score_line = [
-            line for line in content.splitlines() if "Your code has been rated at" in line
-        ]
-        if score_line:
-            print(f"Linting issues found: {score_line[0]}")
-        else:
-            print("Linting issues found. See pylint.txt for details.")
-        return False
+        print("Linting issues found. See pylint.txt for details.")
+    return False
 
 
 def run_tests():
@@ -71,11 +68,11 @@ def run_tests():
 
     if result.returncode != 0:
         print("Tests failed!")
-        with open(pytest_out, "r") as f:
+        with open(pytest_out, "r", encoding="utf-8") as f:
             print(f.read())
         return False
 
-    with open(pytest_out, "r") as f:
+    with open(pytest_out, "r", encoding="utf-8") as f:
         content = f.read()
         print("Test results summary:")
         for line in content.splitlines():

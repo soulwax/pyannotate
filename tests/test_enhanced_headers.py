@@ -51,7 +51,7 @@ def _create_test_pattern_files():
         ("# @file test.rb", "#", ""),
     ]
 
-    for i, (header, start, end) in enumerate(patterns):
+    for i, (header, comment_start, comment_end) in enumerate(patterns):
         file_path = TEST_DIR / f"pattern_{i}.txt"
         content = f"{header}\nprint('test')\n"
         file_path.write_text(content)
@@ -246,8 +246,62 @@ def _create_web_framework_test_files():
     </html>
     """
 
+    # File with different header format
+    different_header_js = """// Filename: legacy-component.js
+    // Author: Legacy Developer
+    // Created: 2022-01-01
+    // Version: 1.0.0
+
+    class LegacyComponent {
+      constructor(props) {
+        this.props = props;
+        this.state = {
+          count: 0
+        };
+      }
+      
+      incrementCount() {
+        this.state.count++;
+        console.log(`Count is now ${this.state.count}`);
+      }
+      
+      render() {
+        return `<div class="legacy-component">
+          <h2>${this.props.title}</h2>
+          <p>Count: ${this.state.count}</p>
+          <button onClick="this.incrementCount()">Increment</button>
+        </div>`;
+      }
+    }
+
+    export default LegacyComponent;
+    """
+
+    # CSS with header using different format
+    css_with_header = """/* Source: styles.css
+     * Description: Main stylesheet for the application
+     * Author: Design Team
+     */
+
+    :root {
+      --primary-color: #4a90e2;
+      --secondary-color: #e74c3c;
+      --text-color: #333;
+      --background-color: #f9f9f9;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--background-color);
+      margin: 0;
+      padding: 0;
+    }
+    """
+
     # Create subdirectories
-    web_dirs = ["vue", "svelte", "astro", "react", "html"]
+    web_dirs = ["vue", "svelte", "astro", "react", "html", "legacy"]
     for dir_name in web_dirs:
         os.makedirs(TEST_DIR / dir_name, exist_ok=True)
 
@@ -258,6 +312,288 @@ def _create_web_framework_test_files():
     (TEST_DIR / "astro" / "Component.astro").write_text(astro_component)
     (TEST_DIR / "react" / "Counter.jsx").write_text(react_component)
     (TEST_DIR / "html" / "index.html").write_text(html_file)
+    (TEST_DIR / "legacy" / "legacy-component.js").write_text(different_header_js)
+    (TEST_DIR / "legacy" / "styles.css").write_text(css_with_header)
 
 
-# Rest of your test cases here...
+def test_detect_header_pattern():
+    """Test detecting existing header patterns in files."""
+    patterns = [
+        ("# File: test.py", "#", ""),
+        ("// Filename: test.js", "//", ""),
+        ("/* Source: test.css */", "/*", "*/"),
+        ("<!-- Path: test.html -->", "<!--", "-->"),
+        ("# @file test.rb", "#", ""),
+    ]
+
+    for i, (header, expected_start, expected_end) in enumerate(patterns):
+        file_path = TEST_DIR / f"pattern_{i}.txt"
+
+        # Test detection
+        detected = _detect_header_pattern(file_path)
+        assert detected is not None, f"Failed to detect pattern: {header}"
+        detected_start, detected_end, pattern = detected
+
+        # We only check if the comment markers are correctly detected
+        assert detected_start == expected_start, f"Incorrect start marker for {header}"
+        if expected_end:  # Only check end marker if it exists
+            assert detected_end == expected_end, f"Incorrect end marker for {header}"
+
+
+def test_has_existing_header():
+    """Test enhanced existing header detection."""
+    # Test various header formats
+    header_formats = [
+        "# File: test.py",
+        "#File: test.py",  # No space
+        "# file: test.py",  # Lowercase "file"
+        "# Filename: test.py",
+        "# @file test.py",
+        "# Source: test.py",
+        "# Path: test.py",
+    ]
+
+    for header in header_formats:
+        # Check if our function can detect each format
+        assert _has_existing_header([header], "#"), f"Failed to detect header: {header}"
+
+    # Test non-header content
+    non_headers = [
+        "# Import statements",
+        "# Copyright 2023",
+        "# Author: John Doe",
+        "",
+        "import sys",
+    ]
+
+    for non_header in non_headers:
+        assert not _has_existing_header(
+            [non_header], "#"
+        ), f"Incorrectly detected header: {non_header}"
+
+
+def test_remove_existing_header():
+    """Test removing headers of various formats."""
+    # Test single-line header
+    lines = ["# File: test.py", "", "import sys", "print('Hello')"]
+    result = _remove_existing_header(lines, "#")
+    assert result == ["import sys", "print('Hello')"], "Failed to remove simple header"
+
+    # Test multi-line header with comments
+    lines = [
+        "# File: test.py",
+        "# Author: John Doe",
+        "# Copyright 2023",
+        "",
+        "import sys",
+    ]
+    result = _remove_existing_header(lines, "#")
+    assert result == ["import sys"], "Failed to remove multi-line header"
+
+    # Test when no header exists
+    lines = ["import sys", "print('Hello')"]
+    result = _remove_existing_header(lines, "#")
+    assert result == lines, "Modified content when no header exists"
+
+
+def test_merge_headers():
+    """Test merging existing headers with our standard format."""
+    # Test merging header with additional information
+    existing = "# File: old_path.py\n# Author: John Doe\n# Version: 1.0"
+    new = "File: test.py"
+    result = _merge_headers(existing, new, "#", "")
+
+    # Check that our file path is used but other information is preserved
+    assert "File: test.py" in result, "New file path not in merged header"
+    assert "Author: John Doe" in result, "Author info not preserved"
+    assert "Version: 1.0" in result, "Version info not preserved"
+
+    # Test with HTML-style comments
+    existing = "<!-- Filename: old.html -->\n<!-- Created: 2023-07-01 -->"
+    new = "File: test.html"
+    result = _merge_headers(existing, new, "<!--", "-->")
+
+    assert "File: test.html" in result, "New file path not in merged HTML header"
+    assert "Created: 2023-07-01" in result, "Creation date not preserved in HTML header"
+
+
+def test_web_framework_files():
+    """Test processing web framework files like Vue and Svelte."""
+    # Test Vue file with template
+    vue_file = TEST_DIR / "vue" / "Component.vue"
+
+    # Process the file
+    process_file(vue_file, TEST_DIR)
+
+    # Read and check the processed content
+    processed = vue_file.read_text()
+    assert "<template>" in processed, "Vue template element not preserved at top"
+    assert "<!-- File: vue/Component.vue -->" in processed, "Vue file header not added correctly"
+
+    # Test Vue file with script setup
+    vue_setup_file = TEST_DIR / "vue" / "SetupComponent.vue"
+
+    # Process the file
+    process_file(vue_setup_file, TEST_DIR)
+
+    # Read and check the processed content
+    processed = vue_setup_file.read_text()
+    assert "<script setup>" in processed, "Vue script setup not preserved at top"
+    assert (
+        "<!-- File: vue/SetupComponent.vue -->" in processed
+    ), "Vue file header not added correctly"
+
+
+def test_svelte_file():
+    """Test processing Svelte files."""
+    svelte_file = TEST_DIR / "svelte" / "Component.svelte"
+
+    # Process the file
+    process_file(svelte_file, TEST_DIR)
+
+    # Read and check the processed content
+    processed = svelte_file.read_text()
+    assert "<script>" in processed, "Svelte script tag not preserved at top"
+    assert (
+        "<!-- File: svelte/Component.svelte -->" in processed
+    ), "Svelte file header not added correctly"
+
+
+def test_astro_file():
+    """Test processing Astro files."""
+    astro_file = TEST_DIR / "astro" / "Component.astro"
+
+    # Process the file
+    process_file(astro_file, TEST_DIR)
+
+    # Read and check the processed content
+    processed = astro_file.read_text()
+    assert "---" in processed, "Astro frontmatter not preserved"
+    assert (
+        "<!-- File: astro/Component.astro -->" in processed
+    ), "Astro file header not added correctly"
+
+
+def test_react_jsx_file():
+    """Test processing React JSX files."""
+    react_file = TEST_DIR / "react" / "Counter.jsx"
+
+    # Process the file
+    process_file(react_file, TEST_DIR)
+
+    # Read and check the processed content
+    processed = react_file.read_text()
+    assert processed.startswith("// File: react/Counter.jsx"), "JSX file header not added correctly"
+    assert "import React" in processed, "JSX import statement not preserved"
+
+
+def test_different_header_formats():
+    """Test handling files with different header formats than our standard."""
+    # Test JS file with non-standard header
+    js_file = TEST_DIR / "legacy" / "legacy-component.js"
+
+    # Process the file
+    process_file(js_file, TEST_DIR)
+
+    # Verify the header was replaced with our format but preserved information
+    processed = js_file.read_text()
+    assert processed.startswith(
+        "// File: legacy/legacy-component.js"
+    ), "Header not converted to our format"
+    assert "// Author: Legacy Developer" in processed, "Author information not preserved"
+    assert "// Created: 2022-01-01" in processed, "Creation date not preserved"
+    assert "// Version: 1.0.0" in processed, "Version info not preserved"
+    assert "class LegacyComponent" in processed, "Class content preserved"
+
+    # Test CSS file with non-standard header
+    css_file = TEST_DIR / "legacy" / "styles.css"
+
+    # Process the file
+    process_file(css_file, TEST_DIR)
+
+    # Verify the header was replaced with our format but preserved information
+    processed = css_file.read_text()
+    assert processed.startswith(
+        "/* File: legacy/styles.css */"
+    ), "Header not converted to our format"
+    assert "Description: Main stylesheet" in processed, "Description not preserved"
+    assert "Author: Design Team" in processed, "Author information not preserved"
+
+
+def test_html_doctype_handling():
+    """Test that HTML DOCTYPE declarations are properly preserved."""
+    html_file = TEST_DIR / "html" / "index.html"
+
+    # Process the file
+    process_file(html_file, TEST_DIR)
+
+    # Read and check the processed content
+    processed = html_file.read_text()
+    lines = processed.splitlines()
+
+    # Verify DOCTYPE is preserved at the top
+    assert "<!DOCTYPE html>" in lines[0], "DOCTYPE not preserved at the first line"
+    # Verify our header appears right after the DOCTYPE
+    assert "<!-- File: html/index.html -->" in lines[1], "Header not placed after DOCTYPE"
+
+    # Make sure the rest of the content is preserved
+    assert '<html lang="en">' in processed, "HTML element not preserved"
+    assert "<title>Sample Page</title>" in processed, "Title not preserved"
+
+
+def test_walk_directory_with_web_files():
+    """Test walking through a directory with web framework files."""
+    # Create a separate directory for testing walk_directory
+    walk_test_dir = TEST_DIR / "walk_test"
+    walk_test_dir.mkdir()
+
+    # Copy some files for testing
+    shutil.copy(TEST_DIR / "vue" / "Component.vue", walk_test_dir / "Component.vue")
+    shutil.copy(TEST_DIR / "html" / "index.html", walk_test_dir / "index.html")
+    shutil.copy(TEST_DIR / "react" / "Counter.jsx", walk_test_dir / "Counter.jsx")
+
+    # Process the directory
+    walk_directory(walk_test_dir, TEST_DIR)
+
+    # Check that all files were processed
+    vue_content = (walk_test_dir / "Component.vue").read_text()
+    html_content = (walk_test_dir / "index.html").read_text()
+    jsx_content = (walk_test_dir / "Counter.jsx").read_text()
+
+    assert "<!-- File: walk_test/Component.vue -->" in vue_content
+    assert "<!DOCTYPE html>" in html_content
+    assert "<!-- File: walk_test/index.html -->" in html_content
+    assert "// File: walk_test/Counter.jsx" in jsx_content
+
+
+def test_skipped_file_types():
+    """Test that specific file types are skipped."""
+    # Create markdown and JSON files
+    md_file = TEST_DIR / "README.md"
+    json_file = TEST_DIR / "config.json"
+
+    md_content = """# Project Title
+
+A simple project description.
+
+## Installation
+
+Installation instructions here.
+"""
+
+    json_content = """{
+  "name": "test-project",
+  "version": "1.0.0",
+  "description": "A test project"
+}"""
+
+    md_file.write_text(md_content)
+    json_file.write_text(json_content)
+
+    # Process the files
+    process_file(md_file, TEST_DIR)
+    process_file(json_file, TEST_DIR)
+
+    # Verify the content is unchanged (markdown and JSON files should be skipped)
+    assert md_file.read_text() == md_content, "Markdown file was modified but should be skipped"
+    assert json_file.read_text() == json_content, "JSON file was modified but should be skipped"

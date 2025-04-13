@@ -1,0 +1,29 @@
+---
+// Component imports and props
+import { Button } from '../components/Button.astro';
+const { title = 'Default Title' } = Astro.props;
+---
+
+<section class="hero">
+  <h1>{title}</h1>
+  <p>Welcome to my Astro site!</p>
+  <Button text="Learn more" />
+</section>
+
+<style>
+  .hero {
+    padding: 4rem;
+    text-align: center;
+  }
+  h1 {
+    font-size: 3rem;
+    font-weight: 800;
+  }
+</style>
+
+<script>
+  // Client-side JavaScript
+  document.querySelector('h1').addEventListener('click', () => {
+    alert('Hello from Astro!');
+  });
+</script>

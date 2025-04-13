@@ -1,5 +1,5 @@
 # File: setup.py
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # Read README with explicit UTF-8 encoding
 with open("README.md", "r", encoding="utf-8") as readme_file:
@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as readme_file:
 
 setup(
     name="pyannotate",
-    version="0.3.3",
+    version="0.4.0",  # Incremented version for new features
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     install_requires=[],
@@ -34,6 +34,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",  # Added Python 3.13 support
         "Topic :: System :: Filesystems",
         "Topic :: Utilities",
     ],

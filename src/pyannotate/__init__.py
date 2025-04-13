@@ -15,7 +15,7 @@ from .annotate_headers import (
     walk_directory,
 )
 
-__version__ = "0.2.1"
+__version__ = "0.4.0"  # Updated version number
 
 __all__ = [
     "process_file",

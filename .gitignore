@@ -171,7 +171,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-
 # Custom
 tree.txt
 test.txt
@@ -183,7 +182,7 @@ pylint.txt
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*

@@ -41,7 +41,7 @@ PATTERNS = [
         "//",
         "",
     ),
-    FilePattern([".html", ".htm", ".xml", ".svg", ".ui", ".qrc", ".xaml"], "<!--", "-->"),
+    FilePattern([".html", ".htm", ".xml", ".ui", ".qrc", ".xaml"], "<!--", "-->"),
     FilePattern([".css", ".scss", ".sass", ".less"], "/*", "*/"),
     # Web frameworks
     FilePattern([".vue", ".svelte"], "<!--", "-->"),  # Vue and Svelte files
@@ -285,7 +285,6 @@ def _is_special_xml_file(file_path: Path) -> bool:
         ".htm",
         ".xhtml",
         ".xml",
-        ".svg",
         ".ui",
         ".qrc",
         ".ts",

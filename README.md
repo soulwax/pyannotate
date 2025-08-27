@@ -87,7 +87,7 @@ PyAnnotate automatically recognizes various file types and applies the appropria
 - **Python** (.py): `#`
 - **JavaScript/TypeScript** (.js, .ts, .jsx, .tsx): `//`
 - **CSS** (.css): `/* */`
-- **HTML/XML** (.html, .xml, .svg): `<!-- -->`
+- **HTML/XML** (.html, .xml): `<!-- -->`
 - **Shell scripts** (.sh, .bash): `#`
 - **C/C++** (.c, .cpp, .h, .hpp): `//`
 - **And many more formats... e.g.:**

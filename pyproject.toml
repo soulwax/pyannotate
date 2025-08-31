@@ -4,14 +4,47 @@
 requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "pyannotate"
+version = "0.5.0"
+description = "Python package to annotate files with headers."
+authors = [
+    {name = "soulwax", email = "soulwax@nandcore.com"},
+]
+readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Filesystems",
+    "Topic :: Utilities",
+]
+keywords = ["file", "header", "annotation", "comment", "automation"]
+
+[project.urls]
+Homepage = "https://github.com/soulwax/pyannotate"
+Repository = "https://github.com/soulwax/pyannotate"
+Issues = "https://github.com/soulwax/pyannotate/issues"
+
+[project.scripts]
+pyannotate = "pyannotate.cli:main"
+
 [tool.setuptools_scm]
 write_to = "src/pyannotate/_version.py"
 
 [tool.black]
 line-length = 100
 target-version = [
-    'py36',
-    'py37',
     'py38',
     'py39',
     'py310',

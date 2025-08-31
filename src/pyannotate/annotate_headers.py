@@ -111,6 +111,56 @@ IGNORED_DIRS: Set[str] = {
     "bower_components",  # Legacy Bower components
 }
 
+# Define specific files to completely ignore
+IGNORED_FILES: Set[str] = {
+    # Configuration files that shouldn't have headers
+    ".prettierrc",
+    ".eslintrc",
+    ".babelrc",
+    ".stylelintrc",
+    ".browserslistrc",
+    ".nvmrc",
+    ".npmrc",
+    ".yarnrc",
+    ".editorconfig",
+    ".gitattributes",
+    ".gitmodules",
+    ".hgignore",
+    ".hgsub",
+    ".hgsubstate",
+    ".hgtags",
+    # Lock files and auto-generated files
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "Pipfile.lock",
+    "poetry.lock",
+    "Cargo.lock",
+    "go.sum",
+    # Other config files without extensions
+    "Procfile",
+    "Brewfile",
+    "Vagrantfile",
+    "Rakefile",
+    # Files that might break with headers
+    ".env.example",
+    ".env.local",
+    ".env.development",
+    ".env.production",
+    # Special files
+    "LICENSE",
+    "COPYING",
+    "NOTICE",
+    "AUTHORS",
+    "CONTRIBUTORS",
+    "CHANGELOG",
+    "HISTORY",
+    # IDE and editor files
+    ".vscode/settings.json",
+    ".idea/workspace.xml",
+    ".idea/modules.xml",
+}
+
 # Define binary file extensions to skip
 BINARY_EXTENSIONS = {
     # Executables and libraries
@@ -304,7 +354,7 @@ def _is_special_xml_file(file_path: Path) -> bool:
 
 def _process_empty_file(header_line: str) -> str:
     """Process an empty file."""
-    return f"{header_line}\n"
+    return header_line
 
 
 def _create_header_line(comment_start: str, comment_end: str, header: str) -> str:
@@ -495,7 +545,10 @@ def _process_shebang_file(lines: List[str], header_line: str, comment_start: str
     """Process a file with a shebang line."""
     shebang = lines[0]
     remaining_lines = _remove_existing_header(lines[1:], comment_start)
-    return f"{shebang}\n{header_line}\n" + "\n".join(remaining_lines)
+    if remaining_lines and remaining_lines[0].strip():
+        return f"{shebang}\n{header_line}\n\n" + "\n".join(remaining_lines)
+    else:
+        return f"{shebang}\n{header_line}\n" + "\n".join(remaining_lines)
 
 
 def _process_xml_like_file(lines: List[str], header_line: str, comment_start: str) -> str:
@@ -529,12 +582,18 @@ def _process_xml_like_file(lines: List[str], header_line: str, comment_start: st
     if declarations:
         # Remove any existing header from remaining content
         remaining_lines = _remove_existing_header(lines[content_start:], comment_start)
-        # First declarations, then header, then content
-        return "\n".join(declarations + [header_line] + remaining_lines)
+        # First declarations, then header, then content (avoid extra newlines)
+        if remaining_lines and remaining_lines[0].strip():
+            return "\n".join(declarations + [header_line] + [""] + remaining_lines)
+        else:
+            return "\n".join(declarations + [header_line] + remaining_lines)
 
     # If no declarations, treat as regular file with header at top
     remaining_lines = _remove_existing_header(lines, comment_start)
-    return f"{header_line}\n\n" + "\n".join(remaining_lines)
+    if remaining_lines and remaining_lines[0].strip():
+        return f"{header_line}\n\n" + "\n".join(remaining_lines)
+    else:
+        return header_line + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
 
 
 def _process_web_framework_file(
@@ -559,7 +618,10 @@ def _process_web_framework_file(
 
     # Default back to regular header placement for other cases
     remaining_lines = _remove_existing_header(lines, comment_start)
-    return f"{header_line}\n\n" + "\n".join(remaining_lines)
+    if remaining_lines and remaining_lines[0].strip():
+        return f"{header_line}\n\n" + "\n".join(remaining_lines)
+    else:
+        return header_line + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
 
 
 def is_binary(file_path: Path) -> bool:
@@ -693,6 +755,11 @@ def process_file(file_path: Path, project_root: Path) -> None:
         logging.debug("Skipping documentation file: %s", file_path)
         return
 
+    # Skip files in the IGNORED_FILES set
+    if file_path.name in IGNORED_FILES:
+        logging.debug("Skipping ignored file: %s", file_path)
+        return
+
     # Skip binary files
     if file_path.suffix.lower() in BINARY_EXTENSIONS or is_binary(file_path):
         logging.debug("Skipping binary file: %s", file_path)
@@ -754,11 +821,14 @@ def process_file(file_path: Path, project_root: Path) -> None:
 
                 existing_header = "\n".join(header_lines)
                 merged_header = _merge_headers(existing_header, header, comment_start, comment_end)
-                new_content = (
-                    merged_header
-                    + "\n\n"
-                    + "\n".join(_remove_existing_header(lines, detected_start))
-                )
+                remaining_lines = _remove_existing_header(lines, detected_start)
+
+                if remaining_lines and remaining_lines[0].strip():
+                    new_content = merged_header + "\n\n" + "\n".join(remaining_lines)
+                else:
+                    new_content = merged_header + (
+                        "\n" + "\n".join(remaining_lines) if remaining_lines else ""
+                    )
             else:
                 # Header exists but we couldn't detect its pattern - just log and return
                 logging.debug("File already has header: %s", file_path)
@@ -769,10 +839,18 @@ def process_file(file_path: Path, project_root: Path) -> None:
             remaining_lines = [
                 line for line in lines if line.strip() not in [l.strip() for l in metadata_lines]
             ]
-            new_content = combined_header + "\n\n" + "\n".join(remaining_lines)
+            if remaining_lines and remaining_lines[0].strip():
+                new_content = combined_header + "\n\n" + "\n".join(remaining_lines)
+            else:
+                new_content = combined_header + (
+                    "\n" + "\n".join(remaining_lines) if remaining_lines else ""
+                )
         else:
             # Default case: add header to the top of the file
-            new_content = f"{header_line}\n\n{content}"
+            if content.strip():
+                new_content = f"{header_line}\n\n{content}"
+            else:
+                new_content = header_line
 
         # Only write if new_content is set and different from original content
         if new_content is not None and new_content != content:

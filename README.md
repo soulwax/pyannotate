@@ -1,6 +1,6 @@
 # PyAnnotate
 
-📜 **A soon to be truly powerful Python tool** for automating the creation and maintenance of file headers in projects.
+📜 **A powerful Python tool** for automating the creation and maintenance of file headers in projects.
 
 ---
 
@@ -9,15 +9,17 @@
 - 🛠️ **Automatically updates and creates file headers**
 - 🌐 **Supports numerous programming languages and file types**
 - 🔖 **Preserves shebang lines** in scripts
-- 🚫 **Customizable exclude directories**
+- 🚫 **Smart file filtering** with customizable exclude directories and ignored files
 - ⚙️ **Specific handling of configuration files**
 - 🖥️ **CLI interface and Python API for versatile usage**
+- 📝 **Improved newline handling** - no more unnecessary trailing newlines
+- 🛡️ **Protects configuration files** - automatically skips files like `.prettierrc`, `.eslintrc`, etc.
 
 ---
 
 ## 🛠️ Installation
 
-While the package is pending on PyPi you cannot install it via `pip install PyAnnotate`, you can install it locally instead:
+While the package is pending on PyPI, you can install it locally:
 
 1. **Clone the repository:**
 
@@ -90,25 +92,39 @@ PyAnnotate automatically recognizes various file types and applies the appropria
 - **HTML/XML** (.html, .xml): `<!-- -->`
 - **Shell scripts** (.sh, .bash): `#`
 - **C/C++** (.c, .cpp, .h, .hpp): `//`
+- **Vue/Svelte/Astro** (.vue, .svelte, .astro): `<!-- -->`
 - **And many more formats... e.g.:**
---**JSON5** (.json5): `//`
---**TOML** (.toml): `#`
+  - **JSON5** (.json5): `//`
+  - **TOML** (.toml): `#`
+  - **Go** (.go): `//`
+  - **Rust** (.rs): `//`
+  - **Ruby** (.rb): `#`
 
-Suffice to say there is more to come.
+---
 
-## File formats we leave alone
+## File Formats We Leave Alone
 
-- **Markdown** (.md): `<!-- -->`
-- **JSON** (.json): `//`
+### 🚫 Completely Ignored Files
+
+- **Configuration files**: `.prettierrc`, `.eslintrc`, `.babelrc`, `.stylelintrc`
+- **Lock files**: `package-lock.json`, `yarn.lock`, `Pipfile.lock`, `poetry.lock`
+- **Environment files**: `.env.example`, `.env.local`, `.env.development`, `.env.production`
+- **License files**: `LICENSE`, `COPYING`, `NOTICE`, `AUTHORS`
+- **Auto-generated files**: Various build and cache files
+
+### 📝 Skipped for Headers
+
+- **Markdown** (.md, .markdown): Documentation files
+- **JSON** (.json): Standard JSON files (only JSON5 gets headers)
 
 ---
 
 ## ⚙️ Configuration Options
 
-PyAnnotate automatically detects most common file types but also offers flexible customization options. Changes can be made by modifying the following constants:
+PyAnnotate automatically detects most common file types and offers flexible customization:
 
 ```python
-from pyannotate import PATTERNS, IGNORED_DIRS, SPECIAL_FILE_COMMENTS
+from pyannotate import PATTERNS, IGNORED_DIRS, IGNORED_FILES, SPECIAL_FILE_COMMENTS
 
 # Add custom file types
 PATTERNS.append(FilePattern([".custom"], "//"))
@@ -116,41 +132,59 @@ PATTERNS.append(FilePattern([".custom"], "//"))
 # Extend ignored directories
 IGNORED_DIRS.add("custom_modules")
 
-# Define specific files with unique comment styles (e.g., `.customrc`)
-SPECIAL_FILE_COMMENTS[".customrc"] = "//"
+# Add files to ignore completely
+IGNORED_FILES.add("custom-config.json")
+
+# Define specific files with unique comment styles
+SPECIAL_FILE_COMMENTS[".customrc"] = ("#", "")
 ```
 
 ---
 
-## 🔮 (Possible) Future Enhancements
+## 🆕 What's New in Version 0.5.0
+
+### 🚫 Smart File Filtering
+
+- **New IGNORED_FILES set**: Automatically skips configuration files that shouldn't have headers
+- **Prevents breaking configs**: Files like `.prettierrc`, `.eslintrc`, `.babelrc` are now safely ignored
+- **Protects lock files**: Auto-generated files like `package-lock.json`, `yarn.lock` won't be modified
+
+### 📝 Improved Output Quality  
+
+- **No more trailing newlines**: Files no longer get unnecessary blank lines at the end
+- **Better spacing**: Smarter handling of blank lines between headers and content
+- **Cleaner processing**: Enhanced handling of empty files and whitespace-only files
+
+---
+
+## 🔮 Future Enhancements
 
 ### 🚧 Planned Features
 
-- [x] Add support for multi-line comment styles (e.g., `/* */` for CSS)
 - [ ] Implement configuration file support (YAML/JSON) for project-specific settings
 - [ ] Add option to customize header template
 - [ ] Create option to add author/date information to headers
 - [ ] Develop pre-commit hook integration
+- [ ] Add dry-run mode to preview changes
+- [ ] Implement rollback/undo functionality
 
 ### 🌐 Language and File Type Expansion
 
-- [ ] Add more file type support (Ruby, Go, Rust, etc.)
+- [ ] Add more specialized file type support
 - [ ] Improve handling of complex comment styles
-- [ ] Better support for configuration and build files
+- [ ] Better support for domain-specific configuration files
 
 ### 🛠️ Improvements
 
-- [ ] Add dry-run mode to preview changes
-- [ ] Implement rollback/undo functionality
 - [ ] Create more comprehensive logging options
-- [ ] Add unit tests for edge cases
 - [ ] Develop GUI or web interface for configuration
+- [ ] Add unit tests for edge cases
+- [ ] Implement file change tracking to minimize unnecessary writes
 
 ### 🔒 Robustness and Performance
 
 - [ ] Optimize file processing for large projects
 - [ ] Add more robust error handling
-- [ ] Implement file change tracking to minimize unnecessary writes
 - [ ] Create performance benchmarking tools
 
 ### 📦 Packaging and Distribution

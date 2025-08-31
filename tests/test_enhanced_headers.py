@@ -52,8 +52,8 @@ def _create_test_pattern_files():
     ]
 
     for i, (header, comment_start, comment_end) in enumerate(patterns):
-        file_path = TEST_DIR / f"pattern_{i}.txt"
-        content = f"{header}\nprint('test')\n"
+        file_path = TEST_DIR / "pattern_{}.txt".format(i)
+        content = "{}\nprint('test')\n".format(header)
         file_path.write_text(content)
 
 
@@ -327,17 +327,17 @@ def test_detect_header_pattern():
     ]
 
     for i, (header, expected_start, expected_end) in enumerate(patterns):
-        file_path = TEST_DIR / f"pattern_{i}.txt"
+        file_path = TEST_DIR / "pattern_{}.txt".format(i)
 
         # Test detection
         detected = _detect_header_pattern(file_path)
-        assert detected is not None, f"Failed to detect pattern: {header}"
+        assert detected is not None, "Failed to detect pattern: {}".format(header)
         detected_start, detected_end, pattern = detected
 
         # We only check if the comment markers are correctly detected
-        assert detected_start == expected_start, f"Incorrect start marker for {header}"
+        assert detected_start == expected_start, "Incorrect start marker for {}".format(header)
         if expected_end:  # Only check end marker if it exists
-            assert detected_end == expected_end, f"Incorrect end marker for {header}"
+            assert detected_end == expected_end, "Incorrect end marker for {}".format(header)
 
 
 def test_has_existing_header():
@@ -355,7 +355,7 @@ def test_has_existing_header():
 
     for header in header_formats:
         # Check if our function can detect each format
-        assert _has_existing_header([header], "#"), f"Failed to detect header: {header}"
+        assert _has_existing_header([header], "#"), "Failed to detect header: {}".format(header)
 
     # Test non-header content - these should not be detected as headers
     non_headers = [
@@ -369,7 +369,7 @@ def test_has_existing_header():
     for non_header in non_headers:
         assert not _has_existing_header(
             [non_header], "#"
-        ), f"Incorrectly detected header: {non_header}"
+        ), "Incorrectly detected header: {}".format(non_header)
 
     # But a file with the primary header and metadata should be detected
     combined_headers = [
@@ -380,7 +380,7 @@ def test_has_existing_header():
     for header_lines in combined_headers:
         assert _has_existing_header(
             header_lines, "#"
-        ), f"Failed to detect valid header with metadata"
+        ), "Failed to detect valid header with metadata"
 
 
 def test_remove_existing_header():

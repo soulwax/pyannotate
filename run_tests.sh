@@ -1,5 +1,6 @@
 #!/bin/bash
 # File: run_tests.sh
+
 echo "=== PyAnnotate Test Runner (Unix) ==="
 
 # Check if Python is in the path

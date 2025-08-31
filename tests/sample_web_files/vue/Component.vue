@@ -1,5 +1,6 @@
 <template>
 <!-- File: tests/sample_web_files/vue/Component.vue -->
+
   <div class="hello">
     <h1>{{ msg }}</h1>
     <p>

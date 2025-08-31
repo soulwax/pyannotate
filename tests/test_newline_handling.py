@@ -7,6 +7,9 @@ from pathlib import Path
 import pytest
 
 from pyannotate.annotate_headers import process_file
+from tests.helpers.components import (
+    WEB_FRAMEWORK_TEMPLATES,  # <- central template reuse
+)
 from tests.test_utils import (
     cleanup_test_directory,
     create_temp_test_directory,
@@ -161,28 +164,7 @@ def test_xml_file_proper_spacing():
 def test_vue_file_proper_spacing():
     """Test that Vue files get proper spacing."""
     vue_file = TEST_DIR / "Component.vue"
-    original_content = """<template>
-  <div class="hello">
-    <h1>{{ message }}</h1>
-  </div>
-</template>
-
-<script>
-export default {
-  name: 'HelloWorld',
-  data() {
-    return {
-      message: 'Hello Vue!'
-    }
-  }
-}
-</script>
-
-<style scoped>
-h1 {
-  color: #42b983;
-}
-</style>"""
+    original_content = WEB_FRAMEWORK_TEMPLATES["vue_component"]  # <- reuse, no inline duplicate
     vue_file.write_text(original_content)
 
     process_file(vue_file, TEST_DIR)

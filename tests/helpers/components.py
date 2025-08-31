@@ -1,3 +1,5 @@
+# File: tests/helpers/components.py
+
 """Zentralisierte Test-Samples und Helfer zum Vermeiden von Code-Duplizierung."""
 
 from pathlib import Path

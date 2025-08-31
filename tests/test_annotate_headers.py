@@ -1,3 +1,4 @@
+# pylint: disable=too-few-public-methods
 # File: tests/test_annotate_headers.py
 
 """Core tests for the annotate_headers functionality."""

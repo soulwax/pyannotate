@@ -547,8 +547,7 @@ def _process_shebang_file(lines: List[str], header_line: str, comment_start: str
     remaining_lines = _remove_existing_header(lines[1:], comment_start)
     if remaining_lines and remaining_lines[0].strip():
         return f"{shebang}\n{header_line}\n\n" + "\n".join(remaining_lines)
-    else:
-        return f"{shebang}\n{header_line}\n" + "\n".join(remaining_lines)
+    return f"{shebang}\n{header_line}\n" + "\n".join(remaining_lines)
 
 
 def _process_xml_like_file(lines: List[str], header_line: str, comment_start: str) -> str:
@@ -585,15 +584,13 @@ def _process_xml_like_file(lines: List[str], header_line: str, comment_start: st
         # First declarations, then header, then content (avoid extra newlines)
         if remaining_lines and remaining_lines[0].strip():
             return "\n".join(declarations + [header_line] + [""] + remaining_lines)
-        else:
-            return "\n".join(declarations + [header_line] + remaining_lines)
+        return "\n".join(declarations + [header_line] + remaining_lines)
 
     # If no declarations, treat as regular file with header at top
     remaining_lines = _remove_existing_header(lines, comment_start)
     if remaining_lines and remaining_lines[0].strip():
         return f"{header_line}\n\n" + "\n".join(remaining_lines)
-    else:
-        return header_line + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
+    return header_line + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
 
 
 def _process_web_framework_file(
@@ -620,8 +617,7 @@ def _process_web_framework_file(
     remaining_lines = _remove_existing_header(lines, comment_start)
     if remaining_lines and remaining_lines[0].strip():
         return f"{header_line}\n\n" + "\n".join(remaining_lines)
-    else:
-        return header_line + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
+    return header_line + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
 
 
 def is_binary(file_path: Path) -> bool:
@@ -700,11 +696,11 @@ def _get_comment_style(file_path: Path) -> Optional[Tuple[str, str]]:
             # If it starts with common comment markers, use that
             if first_line.startswith("//"):
                 return ("//", "")
-            elif first_line.startswith("#"):
+            if first_line.startswith("#"):
                 return ("#", "")
-            elif first_line.startswith("/*"):
+            if first_line.startswith("/*"):
                 return ("/*", "*/")
-            elif first_line.startswith("<!--"):
+            if first_line.startswith("<!--"):
                 return ("<!--", "-->")
     except (UnicodeDecodeError, IOError):
         pass
@@ -742,30 +738,99 @@ def _collect_metadata_lines(lines: List[str], comment_start: str) -> List[str]:
     return metadata_lines
 
 
-def process_file(file_path: Path, project_root: Path) -> None:
-    """Process a single file, adding or updating its header."""
+def _should_skip_path(file_path: Path) -> bool:
+    """Centralize skip logic to reduce statements in process_file."""
     if not file_path.is_file():
         logging.warning("File not found: %s", file_path)
-        return
-
-    # Skip files we want to leave alone
+        return True
     if file_path.suffix.lower() in {".md", ".markdown", ".json"} or (
         file_path.name.lower() == "license" and not file_path.suffix
     ):
         logging.debug("Skipping documentation file: %s", file_path)
-        return
-
-    # Skip files in the IGNORED_FILES set
+        return True
     if file_path.name in IGNORED_FILES:
         logging.debug("Skipping ignored file: %s", file_path)
-        return
-
-    # Skip binary files
+        return True
     if file_path.suffix.lower() in BINARY_EXTENSIONS or is_binary(file_path):
         logging.debug("Skipping binary file: %s", file_path)
+        return True
+    return False
+
+
+def _read_text_best_effort(file_path: Path) -> str:
+    """Read text using UTF-8 with fallback to system default."""
+    try:
+        return file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return file_path.read_text()
+
+
+def _determine_new_content(
+    file_path: Path,
+    content: str,
+    comment_start: str,
+    comment_end: str,
+    header_line: str,
+) -> Optional[str]:
+    """Pure function to compute new content for a file given its current content."""
+    lines = content.splitlines()
+    metadata_lines = _collect_metadata_lines(lines, comment_start)
+
+    if not lines:
+        return _process_empty_file(header_line)
+    if lines[0].startswith("#!"):
+        return _process_shebang_file(lines, header_line, comment_start)
+    if _is_special_xml_file(file_path):
+        return _process_xml_like_file(lines, header_line, comment_start)
+    if file_path.suffix.lower() in {".vue", ".svelte", ".astro"}:
+        return _process_web_framework_file(file_path, lines, header_line, comment_start)
+
+    if _has_existing_header(lines, comment_start):
+        existing_pattern = _detect_header_pattern(file_path)
+        if existing_pattern:
+            detected_start, _detected_end, _pattern = existing_pattern
+            # capture up to 10 header lines
+            header_lines = []
+            for i in range(min(10, len(lines))):
+                line = lines[i].strip()
+                if line and line.startswith(comment_start):
+                    header_lines.append(lines[i])
+                elif not line:
+                    continue
+                else:
+                    break
+            existing_header = "\n".join(header_lines)
+            merged_header = _merge_headers(
+                existing_header, header_line[len(comment_start) + 1 :], comment_start, comment_end
+            )
+            remaining_lines = _remove_existing_header(lines, detected_start)
+            if remaining_lines and remaining_lines[0].strip():
+                return merged_header + "\n\n" + "\n".join(remaining_lines)
+            return merged_header + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
+        # pattern not detectable: bail out
+        logging.debug("File already has header: %s", file_path)
+        return None
+
+    if metadata_lines:
+        combined_header = header_line + "\n" + "\n".join(metadata_lines)
+        remaining_lines = [
+            line for line in lines if line.strip() not in [l.strip() for l in metadata_lines]
+        ]
+        if remaining_lines and remaining_lines[0].strip():
+            return combined_header + "\n\n" + "\n".join(remaining_lines)
+        return combined_header + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
+
+    # default: put header on top
+    if content.strip():
+        return f"{header_line}\n\n{content}"
+    return header_line
+
+
+def process_file(file_path: Path, project_root: Path) -> None:
+    """Process a single file, adding or updating its header."""
+    if _should_skip_path(file_path):
         return
 
-    # Get the comment style for the file
     comment_style = _get_comment_style(file_path)
     if not comment_style:
         logging.debug("Skipping unsupported file type: %s", file_path)
@@ -774,92 +839,18 @@ def process_file(file_path: Path, project_root: Path) -> None:
     comment_start, comment_end = comment_style
 
     try:
-        # Try UTF-8 first
-        try:
-            content = file_path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            # Fall back to system default encoding if UTF-8 fails
-            content = file_path.read_text()
-
-        # Create the header
+        content = _read_text_best_effort(file_path)
         header = _create_header(file_path, project_root)
         header_line = _create_header_line(comment_start, comment_end, header)
-        lines = content.splitlines()
+        new_content = _determine_new_content(
+            file_path, content, comment_start, comment_end, header_line
+        )
 
-        # Initialize new_content as None
-        new_content = None
-
-        # Collect metadata lines for potential use
-        metadata_lines = _collect_metadata_lines(lines, comment_start)
-
-        # Process file based on its characteristics
-        if not lines:
-            new_content = _process_empty_file(header_line)
-        elif lines[0].startswith("#!"):
-            new_content = _process_shebang_file(lines, header_line, comment_start)
-        elif _is_special_xml_file(file_path):
-            new_content = _process_xml_like_file(lines, header_line, comment_start)
-        elif file_path.suffix.lower() in {".vue", ".svelte", ".astro"}:
-            new_content = _process_web_framework_file(file_path, lines, header_line, comment_start)
-        elif _has_existing_header(lines, comment_start):
-            # Handle file with existing header
-            existing_pattern = _detect_header_pattern(file_path)
-            if existing_pattern:
-                # We have a different header pattern - let's replace it properly
-                detected_start, detected_end, pattern = existing_pattern
-
-                # Use up to 10 lines to capture multiline headers
-                header_lines = []
-                for i in range(min(10, len(lines))):
-                    line = lines[i].strip()
-                    if line and line.startswith(comment_start):
-                        header_lines.append(lines[i])
-                    elif not line:
-                        continue
-                    else:
-                        break
-
-                existing_header = "\n".join(header_lines)
-                merged_header = _merge_headers(existing_header, header, comment_start, comment_end)
-                remaining_lines = _remove_existing_header(lines, detected_start)
-
-                if remaining_lines and remaining_lines[0].strip():
-                    new_content = merged_header + "\n\n" + "\n".join(remaining_lines)
-                else:
-                    new_content = merged_header + (
-                        "\n" + "\n".join(remaining_lines) if remaining_lines else ""
-                    )
-            else:
-                # Header exists but we couldn't detect its pattern - just log and return
-                logging.debug("File already has header: %s", file_path)
-                return
-        elif metadata_lines:
-            # Process file with metadata but no standard header
-            combined_header = header_line + "\n" + "\n".join(metadata_lines)
-            remaining_lines = [
-                line for line in lines if line.strip() not in [l.strip() for l in metadata_lines]
-            ]
-            if remaining_lines and remaining_lines[0].strip():
-                new_content = combined_header + "\n\n" + "\n".join(remaining_lines)
-            else:
-                new_content = combined_header + (
-                    "\n" + "\n".join(remaining_lines) if remaining_lines else ""
-                )
-        else:
-            # Default case: add header to the top of the file
-            if content.strip():
-                new_content = f"{header_line}\n\n{content}"
-            else:
-                new_content = header_line
-
-        # Only write if new_content is set and different from original content
         if new_content is not None and new_content != content:
-            # Write with the same encoding we read with
             file_path.write_text(new_content, encoding="utf-8")
             logging.info("Updated header in: %s", file_path)
         else:
             logging.debug("No changes needed for: %s", file_path)
-
     except (OSError, UnicodeDecodeError) as e:
         logging.debug("Failed to process %s: %s", file_path, e)
 

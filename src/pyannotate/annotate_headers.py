@@ -355,8 +355,8 @@ def _is_special_xml_file(file_path: Path) -> bool:
 
 
 def _process_empty_file(header_line: str) -> str:
-    """Process an empty file."""
-    return header_line
+    """Process an empty file (ensure trailing newline)."""
+    return f"{header_line}\n"
 
 
 def _create_header_line(comment_start: str, comment_end: str, header: str) -> str:
@@ -423,7 +423,7 @@ def _merge_headers(
         standard_header += f" {comment_end}"
 
     # Identify header line vs. metadata lines
-    metadata_lines = []
+    metadata_lines: List[str] = []
 
     for line in existing_lines:
         line = line.strip()
@@ -543,13 +543,42 @@ def _detect_header_pattern(file_path: Path) -> Optional[Tuple[str, str, str]]:
         return None
 
 
+def _strip_leading_blank_lines(lines: List[str]) -> List[str]:
+    """Remove any leading blank lines from a list of lines."""
+    for i, line in enumerate(lines):
+        if line.strip():
+            return lines[i:]
+    return []
+
+
+def _compose_with_header_block(header_block: str, body_lines: List[str]) -> str:
+    """
+    Compose a full file from a header block (one or multiple header lines)
+    and the remaining body lines, ensuring:
+    - exactly one blank line between header and body (if body exists)
+    - trailing newline at EOF
+    """
+    hb = header_block.rstrip("\n")
+    body = _strip_leading_blank_lines(body_lines)
+    if body:
+        result = f"{hb}\n\n" + "\n".join(body)
+    else:
+        result = f"{hb}\n"
+    if not result.endswith("\n"):
+        result += "\n"
+    return result
+
+
 def _process_shebang_file(lines: List[str], header_line: str, comment_start: str) -> str:
     """Process a file with a shebang line."""
     shebang = lines[0]
     remaining_lines = _remove_existing_header(lines[1:], comment_start)
-    if remaining_lines and remaining_lines[0].strip():
-        return f"{shebang}\n{header_line}\n\n" + "\n".join(remaining_lines)
-    return f"{shebang}\n{header_line}\n" + "\n".join(remaining_lines)
+    rest = _compose_with_header_block(header_line, remaining_lines)
+    # Prepend shebang (compose already ensures trailing newline)
+    result = f"{shebang}\n{rest}"
+    if not result.endswith("\n"):
+        result += "\n"
+    return result
 
 
 def _process_xml_like_file(lines: List[str], header_line: str, comment_start: str) -> str:
@@ -561,7 +590,7 @@ def _process_xml_like_file(lines: List[str], header_line: str, comment_start: st
         return _process_empty_file(header_line)
 
     # Store all declaration lines and document type definitions
-    declarations = []
+    declarations: List[str] = []
     content_start = 0
 
     # Identify special top lines that must be preserved at the very beginning
@@ -583,16 +612,16 @@ def _process_xml_like_file(lines: List[str], header_line: str, comment_start: st
     if declarations:
         # Remove any existing header from remaining content
         remaining_lines = _remove_existing_header(lines[content_start:], comment_start)
-        # First declarations, then header, then content (avoid extra newlines)
-        if remaining_lines and remaining_lines[0].strip():
-            return "\n".join(declarations + [header_line] + [""] + remaining_lines)
-        return "\n".join(declarations + [header_line] + remaining_lines)
+        composed = _compose_with_header_block(header_line, remaining_lines)
+        # Prepend declarations (each is already a single line)
+        result = "\n".join(declarations) + "\n" + composed
+        if not result.endswith("\n"):
+            result += "\n"
+        return result
 
     # If no declarations, treat as regular file with header at top
     remaining_lines = _remove_existing_header(lines, comment_start)
-    if remaining_lines and remaining_lines[0].strip():
-        return f"{header_line}\n\n" + "\n".join(remaining_lines)
-    return header_line + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
+    return _compose_with_header_block(header_line, remaining_lines)
 
 
 def _process_web_framework_file(
@@ -617,9 +646,7 @@ def _process_web_framework_file(
 
     # Default back to regular header placement for other cases
     remaining_lines = _remove_existing_header(lines, comment_start)
-    if remaining_lines and remaining_lines[0].strip():
-        return f"{header_line}\n\n" + "\n".join(remaining_lines)
-    return header_line + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
+    return _compose_with_header_block(header_line, remaining_lines)
 
 
 def is_binary(file_path: Path) -> bool:
@@ -712,7 +739,7 @@ def _get_comment_style(file_path: Path) -> Optional[Tuple[str, str]]:
 
 def _collect_metadata_lines(lines: List[str], comment_start: str) -> List[str]:
     """Collect metadata lines from the beginning of a file."""
-    metadata_lines = []
+    metadata_lines: List[str] = []
     in_metadata_block = False
 
     # Look at up to the first 10 lines for metadata
@@ -792,7 +819,7 @@ def _determine_new_content(
         if existing_pattern:
             detected_start, _detected_end, _pattern = existing_pattern
             # capture up to 10 header lines
-            header_lines = []
+            header_lines: List[str] = []
             for i in range(min(10, len(lines))):
                 line = lines[i].strip()
                 if line and line.startswith(comment_start):
@@ -806,9 +833,7 @@ def _determine_new_content(
                 existing_header, header_line[len(comment_start) + 1 :], comment_start, comment_end
             )
             remaining_lines = _remove_existing_header(lines, detected_start)
-            if remaining_lines and remaining_lines[0].strip():
-                return merged_header + "\n\n" + "\n".join(remaining_lines)
-            return merged_header + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
+            return _compose_with_header_block(merged_header, remaining_lines)
         # pattern not detectable: bail out
         logging.debug("File already has header: %s", file_path)
         return None
@@ -818,14 +843,12 @@ def _determine_new_content(
         remaining_lines = [
             line for line in lines if line.strip() not in [l.strip() for l in metadata_lines]
         ]
-        if remaining_lines and remaining_lines[0].strip():
-            return combined_header + "\n\n" + "\n".join(remaining_lines)
-        return combined_header + ("\n" + "\n".join(remaining_lines) if remaining_lines else "")
+        return _compose_with_header_block(combined_header, remaining_lines)
 
-    # default: put header on top
+    # default: put header on top (ensure one blank line and trailing newline)
     if content.strip():
-        return f"{header_line}\n\n{content}"
-    return header_line
+        return _compose_with_header_block(header_line, content.splitlines())
+    return _process_empty_file(header_line)
 
 
 def process_file(file_path: Path, project_root: Path) -> None:

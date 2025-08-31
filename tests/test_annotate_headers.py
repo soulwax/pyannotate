@@ -3,12 +3,16 @@
 
 """Core tests for the annotate_headers functionality."""
 
-import shutil
 from pathlib import Path
 
 import pytest
 
 from pyannotate.annotate_headers import _get_comment_style, process_file, walk_directory
+from tests.test_utils import (
+    cleanup_test_directory,
+    create_temp_test_directory,
+    prepare_existing_header_js,
+)
 
 # Directory for temporary test files
 TEST_DIR = Path("tests/sample_files")
@@ -17,9 +21,7 @@ TEST_DIR = Path("tests/sample_files")
 @pytest.fixture(scope="module", autouse=True)
 def setup_and_teardown():
     """Setup test environment and cleanup after tests."""
-    if TEST_DIR.exists():
-        shutil.rmtree(TEST_DIR)
-    TEST_DIR.mkdir(parents=True)
+    create_temp_test_directory(TEST_DIR)
 
     # Create basic test files
     (TEST_DIR / "valid_file.py").write_text("# Existing header\nprint('Hello, World!')\n")
@@ -40,7 +42,7 @@ def setup_and_teardown():
     yield
 
     # Cleanup after tests
-    shutil.rmtree(TEST_DIR)
+    cleanup_test_directory(TEST_DIR)
 
 
 class TestBasicFileProcessing:
@@ -491,11 +493,7 @@ class TestExistingHeaderHandling:
 
     def test_existing_header_replacement(self):
         """Test that existing headers are properly updated."""
-        js_file = TEST_DIR / "existing_header.js"
-        original_content = """// Old header comment
-// Author: Someone
-console.log("Hello, World!");"""
-        js_file.write_text(original_content)
+        js_file = prepare_existing_header_js(TEST_DIR)
 
         # Process the file
         process_file(js_file, TEST_DIR)

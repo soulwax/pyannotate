@@ -2,20 +2,10 @@
 
 """Shared utilities for tests to reduce code duplication."""
 
-"""Shared utilities for tests to reduce code duplication (ohne Duplikate)."""
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from pyannotate.annotate_headers import process_file
-from tests.helpers.components import (
-    COMMENT_STYLE_TEST_CASES,
-    COMMON_IGNORED_FILES,
-    ENV_FILE_NAMES,
-    LICENSE_FILE_NAMES,
-    WEB_FRAMEWORK_TEMPLATES,
-    create_header_test_pattern_files,
-    create_web_framework_test_files,
-)
 
 
 def create_temp_test_directory(test_dir: Path) -> None:
@@ -45,17 +35,17 @@ def assert_file_content_unchanged(
 ) -> None:
     """Assert that a file's content has not changed."""
     processed_content = file_path.read_text()
-    assert processed_content == original_content, "{} was modified but should be ignored".format(
-        file_description
-    )
+    assert (
+        processed_content == original_content
+    ), f"{file_description} was modified but should be ignored"
 
 
 def assert_header_added(file_path: Path, expected_header_start: str, file_description: str) -> None:
     """Assert that a header was added to a file."""
     content = file_path.read_text()
-    assert content.startswith(expected_header_start), "Header not added correctly for {}".format(
-        file_description
-    )
+    assert content.startswith(
+        expected_header_start
+    ), f"Header not added correctly for {file_description}"
 
 
 def create_standard_test_env(test_dir: Path) -> None:
@@ -71,3 +61,17 @@ def create_standard_test_env(test_dir: Path) -> None:
     nested_dir = test_dir / "nested"
     nested_dir.mkdir()
     (nested_dir / "script.sh").write_text('#!/bin/bash\necho "Hello!"')
+
+
+def prepare_existing_header_js(test_dir: Path, filename: str = "existing_header.js") -> Path:
+    """
+    Write a JS file with a legacy header used by multiple tests and return its path.
+    This centralizes setup to avoid duplicate code across test modules.
+    """
+    js_file = test_dir / filename
+    js_file.write_text(
+        """// Old header comment
+// Author: Someone
+console.log("Hello, World!");"""
+    )
+    return js_file

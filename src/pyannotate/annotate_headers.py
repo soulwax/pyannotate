@@ -129,6 +129,8 @@ IGNORED_FILES: Set[str] = {
     ".hgsub",
     ".hgsubstate",
     ".hgtags",
+    "requirements.txt",
+    "requirements-dev.txt",
     # Lock files and auto-generated files
     "package-lock.json",
     "yarn.lock",

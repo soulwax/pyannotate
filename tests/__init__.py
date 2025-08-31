@@ -9,13 +9,17 @@ This file can be used to:
 - Add global test configurations
 """
 
-# Import test utilities to make them available package-wide
-from .test_utils import (
+# Import central test helpers (constants, templates) from helpers.components
+from tests.helpers.components import (
     COMMENT_STYLE_TEST_CASES,
     COMMON_IGNORED_FILES,
     ENV_FILE_NAMES,
     LICENSE_FILE_NAMES,
     WEB_FRAMEWORK_TEMPLATES,
+)
+
+# Import utility functions shared across tests
+from .test_utils import (
     assert_file_content_unchanged,
     assert_header_added,
     cleanup_test_directory,
@@ -24,11 +28,13 @@ from .test_utils import (
 )
 
 __all__ = [
+    # templates/constants
     "WEB_FRAMEWORK_TEMPLATES",
     "COMMENT_STYLE_TEST_CASES",
     "ENV_FILE_NAMES",
     "LICENSE_FILE_NAMES",
     "COMMON_IGNORED_FILES",
+    # utilities
     "create_temp_test_directory",
     "cleanup_test_directory",
     "create_test_file_with_header_processing",
@@ -45,6 +51,5 @@ def pytest_configure(config):
     - Add custom markers
     - Modify pytest settings
     """
-    # Example: register a custom marker
     config.addinivalue_line("markers", "slow: mark test as slow-running")
     config.addinivalue_line("markers", "integration: mark test as integration test")

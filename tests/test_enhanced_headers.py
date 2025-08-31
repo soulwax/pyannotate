@@ -14,8 +14,6 @@ from pyannotate.annotate_headers import (
     _remove_existing_header,
     process_file,
 )
-
-# Zentrale Test-Helfer & -Templates (vermeidet Duplikate)
 from tests.helpers.components import (
     create_header_test_pattern_files,
     create_web_framework_test_files,
@@ -32,7 +30,7 @@ def setup_and_teardown():
         shutil.rmtree(TEST_DIR)
     TEST_DIR.mkdir(parents=True)
 
-    # Create test files via zentrale Helfer (keine lokalen Duplikate mehr)
+    # Create test files via central helpers
     create_header_test_pattern_files(TEST_DIR)
     create_web_framework_test_files(TEST_DIR)
 
@@ -60,7 +58,6 @@ def test_detect_header_pattern():
 
 def test_has_existing_header():
     """Test enhanced existing header detection."""
-    # Diverse Header-Formate, die erkannt werden sollen
     header_formats = [
         "# File: test.py",
         "#File: test.py",  # No space
@@ -74,7 +71,7 @@ def test_has_existing_header():
     for header in header_formats:
         assert _has_existing_header([header], "#"), f"Failed to detect header: {header}"
 
-    # Nicht-Header-Inhalte dürfen nicht als Header erkannt werden
+    # Non header content must not be detected as headers
     non_headers = [
         "# Import statements",
         "# Copyright 2023",
@@ -87,7 +84,7 @@ def test_has_existing_header():
             [non_header], "#"
         ), f"Incorrectly detected header: {non_header}"
 
-    # Primärer Header + Metadaten -> muss erkannt werden
+    # Primary header + metadata -> has to be detected
     combined_headers = [
         ["# File: test.py", "# Author: John Doe"],
         ["# Filename: test.js", "# Version: 1.0.0"],
@@ -100,12 +97,12 @@ def test_has_existing_header():
 
 def test_remove_existing_header():
     """Test removing headers of various formats."""
-    # Einfacher einzeiliger Header
+    # Simple single-line header
     lines = ["# File: test.py", "", "import sys", "print('Hello')"]
     result = _remove_existing_header(lines, "#")
     assert result == ["import sys", "print('Hello')"], "Failed to remove simple header"
 
-    # Mehrzeiliger Header mit Kommentaren
+    # Multi-line header with comments
     lines = [
         "# File: test.py",
         "# Author: John Doe",
@@ -116,7 +113,7 @@ def test_remove_existing_header():
     result = _remove_existing_header(lines, "#")
     assert result == ["import sys"], "Failed to remove multi-line header"
 
-    # Kein Header vorhanden
+    # No header present
     lines = ["import sys", "print('Hello')"]
     result = _remove_existing_header(lines, "#")
     assert result == lines, "Modified content when no header exists"
@@ -124,7 +121,7 @@ def test_remove_existing_header():
 
 def test_merge_headers():
     """Test merging existing headers with our standard format."""
-    # Merge mit zusätzlicher Information
+    # Merge with additional information
     existing = "# File: old_path.py\n# Author: John Doe\n# Version: 1.0"
     new = "File: test.py"
     result = _merge_headers(existing, new, "#", "")
@@ -133,7 +130,7 @@ def test_merge_headers():
     assert "Author: John Doe" in result, "Author info not preserved"
     assert "Version: 1.0" in result, "Version info not preserved"
 
-    # HTML-Style Kommentare
+    # HTML-style comments
     existing = "<!-- Filename: old.html -->\n<!-- Created: 2023-07-01 -->"
     new = "File: test.html"
     result = _merge_headers(existing, new, "<!--", "-->")
@@ -144,7 +141,7 @@ def test_merge_headers():
 
 def test_web_framework_files():
     """Test processing web framework files like Vue and Svelte."""
-    # Vue mit <template>
+    # Vue with <template>
     vue_file = TEST_DIR / "vue" / "Component.vue"
     process_file(vue_file, TEST_DIR)
 
@@ -152,7 +149,7 @@ def test_web_framework_files():
     assert "<template>" in processed, "Vue template element not preserved at top"
     assert "<!-- File: vue/Component.vue -->" in processed, "Vue file header not added correctly"
 
-    # Vue mit <script setup>
+    # Vue with <script setup>
     vue_setup_file = TEST_DIR / "vue" / "SetupComponent.vue"
     process_file(vue_setup_file, TEST_DIR)
 
@@ -199,7 +196,7 @@ def test_react_jsx_file():
 
 def test_different_header_formats():
     """Test handling files with different header formats than our standard."""
-    # JS-Datei mit Legacy-Header
+    # JS file with legacy header
     js_file = TEST_DIR / "legacy" / "legacy-component.js"
     original_content = js_file.read_text()
     assert "// Version: 1.0.0" in original_content, "Test setup: Version info missing"
@@ -225,7 +222,7 @@ def test_different_header_formats():
     assert "class LegacyComponent" in processed, "Class content preserved"
     assert "incrementCount()" in processed, "Method content preserved"
 
-    # CSS-Datei mit abweichendem Header
+    # CSS file with deviating header
     css_file = TEST_DIR / "legacy" / "styles.css"
     process_file(css_file, TEST_DIR)
 

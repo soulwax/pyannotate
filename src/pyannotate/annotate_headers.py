@@ -411,8 +411,13 @@ def _merge_headers(
     Returns:
         Merged header string
     """
-    # Extract file path from our new header
+    # Extract file path from our new header. Strip any trailing comment_end
+    # that may be present when callers pass a header fragment that already
+    # includes the comment end (e.g. "File: path */"). This prevents cases
+    # where we would append comment_end twice resulting in "*/ */".
     file_path = new_header.replace("File:", "").strip()
+    if comment_end and file_path.endswith(comment_end):
+        file_path = file_path[: -len(comment_end)].strip()
 
     # Split existing header into lines
     existing_lines = existing_header.strip().split("\n")

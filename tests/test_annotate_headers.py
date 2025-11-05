@@ -1,5 +1,5 @@
-# pylint: disable=too-few-public-methods
 # File: tests/test_annotate_headers.py
+# pylint: disable=too-few-public-methods
 
 """Core tests for the annotate_headers functionality."""
 
@@ -524,3 +524,53 @@ class TestExistingHeaderHandling:
         # Should have exactly one header
         header_count = second_content.count("File: duplicate_test.py")
         assert header_count == 1, f"Should have exactly 1 header, found {header_count}"
+
+    def test_css_existing_annotation_preserved(self):
+        """Ensure existing CSS single-line block annotations are not corrupted.
+
+        A CSS file that already contains a comment like
+        "/* src/styles/globals.css */" should not get an extra closing
+        "*/" inserted by the annotation logic.
+        """
+        css_file = TEST_DIR / "globals.css"
+        # Simulate a file that already contains a single-line block annotation
+        css_file.write_text("/* src/styles/globals.css */\nbody { color: red; }\n")
+
+        # Process the file
+        process_file(css_file, TEST_DIR)
+
+        processed = css_file.read_text()
+
+        # Ensure we didn't create a broken comment like "*/ */"
+        assert "*/ */" not in processed, "Found duplicated comment closers in CSS header"
+
+        # Original annotation should still be present
+        assert "src/styles/globals.css" in processed, "Original annotation text was lost"
+
+        # CSS content preserved
+        assert "body { color: red; }" in processed, "CSS body was lost"
+
+    def test_css_existing_annotation_preserved_with_repo_root(self):
+        """Ensure CSS annotations are preserved when the project_root is the repo root.
+
+        This mirrors running the CLI from the repository root where header lines
+        include the full relative path (e.g. "tests/sample_files/globals.css").
+        """
+        css_file = TEST_DIR / "globals.css"
+        css_file.write_text("/* src/styles/globals.css */\nbody { color: red; }\n")
+
+        # Process using repo root so header will contain the relative path
+        process_file(css_file, Path('.').resolve())
+
+        processed = css_file.read_text()
+
+        # Ensure we didn't create a broken comment like "*/ */"
+        assert "*/ */" not in processed, "Found duplicated comment closers when using repo root"
+
+        # Header should include the path
+        expected_path = "tests/sample_files/globals.css"
+        assert expected_path in processed, "Header path missing when using repo root"
+
+        # Original annotation and body preserved
+        assert "src/styles/globals.css" in processed
+        assert "body { color: red; }" in processed

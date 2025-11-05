@@ -1,4 +1,5 @@
 # File: src/pyannotate/__init__.py
+
 """pyannotate package init.
 This package provides functionality to automatically add or update file headers
 in various programming language files.

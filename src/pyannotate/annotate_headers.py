@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
+from .config import PyAnnotateConfig
+
 
 @dataclass
 class FilePattern:
@@ -773,7 +775,7 @@ def _collect_metadata_lines(lines: List[str], comment_start: str) -> List[str]:
     return metadata_lines
 
 
-def _should_skip_path(file_path: Path) -> bool:
+def _should_skip_path(file_path: Path, config: Optional[PyAnnotateConfig] = None) -> bool:
     """Centralize skip logic to reduce statements in process_file."""
     if not file_path.is_file():
         logging.warning("File not found: %s", file_path)
@@ -783,9 +785,17 @@ def _should_skip_path(file_path: Path) -> bool:
     ):
         logging.debug("Skipping documentation file: %s", file_path)
         return True
+
+    # Check default ignored files
     if file_path.name in IGNORED_FILES:
         logging.debug("Skipping ignored file: %s", file_path)
         return True
+
+    # Check config-based ignored files
+    if config and file_path.name in config.files.ignored_files:
+        logging.debug("Skipping config-ignored file: %s", file_path)
+        return True
+
     if file_path.suffix.lower() in BINARY_EXTENSIONS or is_binary(file_path):
         logging.debug("Skipping binary file: %s", file_path)
         return True
@@ -857,7 +867,12 @@ def _determine_new_content(
     return _process_empty_file(header_line)
 
 
-def process_file(file_path: Path, project_root: Path, dry_run: bool = False) -> dict:
+def process_file(
+    file_path: Path,
+    project_root: Path,
+    dry_run: bool = False,
+    config: Optional[PyAnnotateConfig] = None,
+) -> dict:
     """
     Process a single file, adding or updating its header.
 
@@ -865,11 +880,12 @@ def process_file(file_path: Path, project_root: Path, dry_run: bool = False) -> 
         file_path: Path to the file to process
         project_root: Root directory of the project
         dry_run: If True, preview changes without modifying files
+        config: Optional configuration object
 
     Returns:
         Dictionary with status information: {"status": "modified|skipped|unchanged"}
     """
-    if _should_skip_path(file_path):
+    if _should_skip_path(file_path, config):
         return {"status": "skipped", "reason": "file_ignored"}
 
     comment_style = _get_comment_style(file_path)
@@ -901,7 +917,12 @@ def process_file(file_path: Path, project_root: Path, dry_run: bool = False) -> 
         return {"status": "skipped", "reason": str(e)}
 
 
-def walk_directory(directory: Path, project_root: Path, dry_run: bool = False) -> dict:
+def walk_directory(
+    directory: Path,
+    project_root: Path,
+    dry_run: bool = False,
+    config: Optional[PyAnnotateConfig] = None,
+) -> dict:
     """
     Walk through directory and process files recursively.
 
@@ -909,22 +930,28 @@ def walk_directory(directory: Path, project_root: Path, dry_run: bool = False) -
         directory: Directory to walk through
         project_root: Root directory of the project
         dry_run: If True, preview changes without modifying files
+        config: Optional configuration object
 
     Returns:
         Dictionary with statistics: {"modified": int, "skipped": int, "unchanged": int}
     """
     stats = {"modified": 0, "skipped": 0, "unchanged": 0}
 
+    # Combine default and config-based ignored directories
+    ignored_dirs = IGNORED_DIRS.copy()
+    if config:
+        ignored_dirs.update(config.files.ignored_directories)
+
     try:
         for item in directory.iterdir():
             if item.is_dir():
-                if item.name not in IGNORED_DIRS:
-                    sub_stats = walk_directory(item, project_root, dry_run=dry_run)
+                if item.name not in ignored_dirs:
+                    sub_stats = walk_directory(item, project_root, dry_run=dry_run, config=config)
                     stats["modified"] += sub_stats["modified"]
                     stats["skipped"] += sub_stats["skipped"]
                     stats["unchanged"] += sub_stats["unchanged"]
             else:
-                result = process_file(item, project_root, dry_run=dry_run)
+                result = process_file(item, project_root, dry_run=dry_run, config=config)
                 if result["status"] == "modified":
                     stats["modified"] += 1
                 elif result["status"] == "skipped":

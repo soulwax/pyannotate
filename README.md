@@ -295,7 +295,87 @@ This is especially useful for:
 
 ## ⚙️ **Configuration & Customization**
 
-### 🛠️ **Extending File Support**
+### 📋 **Configuration Files**
+
+PyAnnotate supports project-specific configuration via configuration files. Place one of these files in your project root:
+
+- **`.pyannotate.yaml`** or **`.pyannotate.yml`** (YAML format)
+- **`.pyannotate.json`** (JSON format)
+- **`pyproject.toml`** (with `[tool.pyannotate]` section)
+
+#### Configuration File Example (YAML)
+
+```yaml
+# .pyannotate.yaml
+header:
+  author: "Your Name"
+  author_email: "your.email@example.com"
+  version: "1.0.0"
+  include_date: true
+  date_format: "%Y-%m-%d"
+
+files:
+  ignored_files:
+    - "custom_config.json"
+    - "local_settings.py"
+  ignored_directories:
+    - "local_data"
+    - "temp_files"
+```
+
+#### Configuration File Example (JSON)
+
+```json
+{
+  "header": {
+    "author": "Your Name",
+    "author_email": "your.email@example.com",
+    "version": "1.0.0",
+    "include_date": true,
+    "date_format": "%Y-%m-%d"
+  },
+  "files": {
+    "ignored_files": ["custom_config.json"],
+    "ignored_directories": ["local_data"]
+  }
+}
+```
+
+#### Configuration File Example (TOML in pyproject.toml)
+
+```toml
+[tool.pyannotate]
+[tool.pyannotate.header]
+author = "Your Name"
+author_email = "your.email@example.com"
+version = "1.0.0"
+include_date = true
+date_format = "%Y-%m-%d"
+
+[tool.pyannotate.files]
+ignored_files = ["custom_config.json"]
+ignored_directories = ["local_data"]
+```
+
+#### Configuration Options
+
+**Header Configuration:**
+- `author` - Author name for headers (optional)
+- `author_email` - Author email (optional)
+- `version` - Version string (optional)
+- `include_date` - Whether to include date in headers (default: `false`)
+- `date_format` - Date format string using Python strftime (default: `"%Y-%m-%d"`)
+- `template` - Custom header template with variables (optional, for future use)
+
+**File Configuration:**
+- `ignored_files` - Additional files to ignore (beyond defaults)
+- `ignored_directories` - Additional directories to ignore (beyond defaults)
+- `custom_patterns` - Custom file extension patterns (optional, for future use)
+
+**Note:** For YAML support, install `pyyaml`: `pip install pyyaml`  
+For TOML support on Python < 3.11, install `tomli`: `pip install tomli`
+
+### 🛠️ **Programmatic Configuration**
 
 ```python
 from pyannotate import PATTERNS, FilePattern
@@ -422,7 +502,7 @@ The project maintains comprehensive test coverage including:
 
 ### 🚧 **Planned Features**
 
-- [ ] **Configuration files**: YAML/JSON config for project-specific settings
+- [x] **Configuration files**: YAML/JSON/TOML config for project-specific settings
 - [ ] **Custom templates**: Configurable header templates with variables
 - [ ] **Metadata insertion**: Automatic author/date/version information
 - [ ] **Git integration**: Pre-commit hooks and Git-aware processing

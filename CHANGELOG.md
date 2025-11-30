@@ -2,6 +2,27 @@
 
 ## 🌟 New Features
 
+### 📋 Configuration File Support
+
+- **Multiple format support**: YAML (`.pyannotate.yaml`), JSON (`.pyannotate.json`), and TOML (`pyproject.toml`)
+- **Project-specific settings**: Configure header metadata, ignored files/directories per project
+- **Automatic discovery**: Config files are automatically found by walking up the directory tree
+- **Backward compatible**: Works without config files (uses sensible defaults)
+- **Header configuration**: Set author, email, version, date format (ready for future metadata features)
+- **File filtering**: Extend ignored files and directories via configuration
+
+**Example `.pyannotate.yaml`:**
+```yaml
+header:
+  author: "Your Name"
+  include_date: true
+files:
+  ignored_files: ["custom.txt"]
+  ignored_directories: ["temp"]
+```
+
+**Note:** For YAML support, install `pyyaml`. For TOML on Python < 3.11, install `tomli`.
+
 ### 🔍 Dry-Run Mode
 
 - **Preview changes before applying**: New `--dry-run` flag allows you to see what would be modified without actually changing files

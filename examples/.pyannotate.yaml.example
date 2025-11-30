@@ -1,0 +1,39 @@
+# PyAnnotate Configuration File Example
+# Copy this file to .pyannotate.yaml in your project root
+
+# Header configuration
+header:
+  # Author information (optional)
+  author: "Your Name"
+  author_email: "your.email@example.com"
+  
+  # Version information (optional)
+  version: "1.0.0"
+  
+  # Date settings (optional)
+  include_date: true
+  date_format: "%Y-%m-%d"  # Python strftime format
+  
+  # Custom header template (optional)
+  # Use variables: {file_path}, {author}, {date}, {version}
+  # template: "File: {file_path}\nAuthor: {author}\nDate: {date}"
+
+# File processing configuration
+files:
+  # Additional files to ignore (beyond defaults)
+  ignored_files:
+    - "custom_config.json"
+    - "local_settings.py"
+  
+  # Additional directories to ignore (beyond defaults)
+  ignored_directories:
+    - "local_data"
+    - "temp_files"
+  
+  # Custom file patterns (optional)
+  # Map file extensions to comment styles
+  # custom_patterns:
+  #   ".custom":
+  #     comment_start: "//"
+  #     comment_end: ""
+

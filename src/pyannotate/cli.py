@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 from .annotate_headers import walk_directory
+from .config import load_config
 
 
 class AnnotationError(Exception):
@@ -59,13 +60,16 @@ def main(directory: Optional[Path] = None) -> int:
             logging.error("Directory not found: %s", project_root)
             return 1
 
+        # Load configuration
+        config = load_config(project_root)
+
         if args.dry_run:
             logging.info("DRY-RUN MODE: No files will be modified")
             logging.info("Starting file annotation preview from: %s", project_root)
         else:
             logging.info("Starting file annotation from: %s", project_root)
 
-        stats = walk_directory(project_root, project_root, dry_run=args.dry_run)
+        stats = walk_directory(project_root, project_root, dry_run=args.dry_run, config=config)
 
         if args.dry_run:
             logging.info("=" * 60)

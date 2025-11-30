@@ -101,6 +101,7 @@ print(f"Would modify: {stats['modified']} files")
 print(f"Would skip: {stats['skipped']} files")
 print(f"Unchanged: {stats['unchanged']} files")
 ```
+
 <｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
 read_file
 
@@ -248,11 +249,13 @@ pyannotate --dry-run
 ```
 
 **Output includes:**
+
 - List of files that would be modified
 - Summary statistics (modified, skipped, unchanged counts)
 - Safe preview of all changes
 
 This is especially useful for:
+
 - Reviewing changes before committing
 - Understanding the scope of modifications
 - Testing configuration changes
@@ -360,6 +363,7 @@ ignored_directories = ["local_data"]
 #### Configuration Options
 
 **Header Configuration:**
+
 - `author` - Author name for headers (optional)
 - `author_email` - Author email (optional)
 - `version` - Version string (optional)
@@ -368,6 +372,7 @@ ignored_directories = ["local_data"]
 - `template` - Custom header template with variables (optional, for future use)
 
 **File Configuration:**
+
 - `ignored_files` - Additional files to ignore (beyond defaults)
 - `ignored_directories` - Additional directories to ignore (beyond defaults)
 - `custom_patterns` - Custom file extension patterns (optional, for future use)

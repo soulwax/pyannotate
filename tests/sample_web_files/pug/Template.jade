@@ -1,0 +1,13 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    title= pageTitle
+  body
+    header
+      nav
+        each link in navigation
+          a(href=link.url)= link.label
+    main
+      block content
+

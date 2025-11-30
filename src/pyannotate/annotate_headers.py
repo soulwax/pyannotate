@@ -53,6 +53,13 @@ PATTERNS = [
     FilePattern([".vue", ".svelte"], "<!--", "-->"),  # Vue and Svelte files
     FilePattern([".jsx", ".tsx"], "//", ""),  # React JSX/TSX (already in js group but explicit)
     FilePattern([".astro"], "<!--", "-->"),  # Astro framework
+    FilePattern([".hbs", ".handlebars"], "<!--", "-->"),  # Handlebars templates
+    FilePattern([".ejs"], "<!--", "-->"),  # EJS (Embedded JavaScript)
+    FilePattern([".pug", ".jade"], "//", ""),  # Pug/Jade templates
+    FilePattern([".mustache", ".mst"], "<!--", "-->"),  # Mustache templates
+    FilePattern([".twig"], "{#", "#}"),  # Twig (PHP templating)
+    FilePattern([".jinja", ".jinja2"], "{#", "#}"),  # Jinja2 (Python templating)
+    FilePattern([".mdx"], "<!--", "-->"),  # MDX (Markdown + JSX)
     # Configuration files
     FilePattern([".json5"], "//", ""),  # JSON5
     FilePattern([".toml", ".conf", ".cfg", ".ini"], "#", ""),  # Configuration files
@@ -517,6 +524,11 @@ def _is_special_xml_file(file_path: Path) -> bool:
         ".astro",
         ".wxml",
         ".blade.php",
+        ".hbs",
+        ".handlebars",
+        ".ejs",
+        ".mustache",
+        ".mst",
         # Documentation formats
         ".mdx",
         ".jsx",
@@ -810,8 +822,8 @@ def _process_web_framework_file(
     # Identify the file type
     suffix = file_path.suffix.lower()
 
-    # For Vue and Svelte files, ensure header placement is optimal
-    if suffix in {".vue", ".svelte"}:
+    # For Vue, Svelte, and similar component files, ensure header placement is optimal
+    if suffix in {".vue", ".svelte", ".hbs", ".handlebars", ".ejs", ".mustache", ".mst", ".mdx"}:
         # Check for template/script block patterns
         has_template = any("<template" in line.lower() for line in lines[:10])
         has_script_setup = any("<script setup" in line.lower() for line in lines[:15])
@@ -881,6 +893,27 @@ def _get_comment_style(file_path: Path) -> Optional[Tuple[str, str]]:
 
     if file_path.suffix.lower() == ".astro":
         return ("<!--", "-->")  # Astro files use HTML comments
+
+    if file_path.suffix.lower() in {".hbs", ".handlebars"}:
+        return ("<!--", "-->")  # Handlebars templates use HTML comments
+
+    if file_path.suffix.lower() == ".ejs":
+        return ("<!--", "-->")  # EJS templates use HTML comments
+
+    if file_path.suffix.lower() in {".pug", ".jade"}:
+        return ("//", "")  # Pug/Jade templates use // comments
+
+    if file_path.suffix.lower() in {".mustache", ".mst"}:
+        return ("<!--", "-->")  # Mustache templates use HTML comments
+
+    if file_path.suffix.lower() == ".twig":
+        return ("{#", "#}")  # Twig templates use {# #} comments
+
+    if file_path.suffix.lower() in {".jinja", ".jinja2"}:
+        return ("{#", "#}")  # Jinja2 templates use {# #} comments
+
+    if file_path.suffix.lower() == ".mdx":
+        return ("<!--", "-->")  # MDX files use HTML comments
 
     # Special handling for .ts files
     if file_path.suffix.lower() == ".ts":
@@ -1004,7 +1037,17 @@ def _determine_new_content(
         return _process_shebang_file(lines, header_block, comment_start)
     if _is_special_xml_file(file_path):
         return _process_xml_like_file(lines, header_block, comment_start)
-    if file_path.suffix.lower() in {".vue", ".svelte", ".astro"}:
+    if file_path.suffix.lower() in {
+        ".vue",
+        ".svelte",
+        ".astro",
+        ".hbs",
+        ".handlebars",
+        ".ejs",
+        ".mustache",
+        ".mst",
+        ".mdx",
+    }:
         return _process_web_framework_file(file_path, lines, header_block, comment_start)
 
     if _has_existing_header(lines, comment_start):

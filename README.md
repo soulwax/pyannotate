@@ -179,6 +179,13 @@ PyAnnotate automatically recognizes a vast array of file types and applies appro
 | **Svelte** | `.svelte` | `<!-- -->` | Component structure |
 | **Astro** | `.astro` | `<!-- -->` | Frontmatter preservation |
 | **React JSX/TSX** | `.jsx`, `.tsx` | `//` | - |
+| **MDX** | `.mdx` | `<!-- -->` | Markdown + JSX |
+| **Handlebars** | `.hbs`, `.handlebars` | `<!-- -->` | Template syntax |
+| **EJS** | `.ejs` | `<!-- -->` | Embedded JavaScript |
+| **Pug/Jade** | `.pug`, `.jade` | `//` | Indentation-based |
+| **Mustache** | `.mustache`, `.mst` | `<!-- -->` | Logic-less templates |
+| **Twig** | `.twig` | `{# #}` | PHP templating |
+| **Jinja2** | `.jinja`, `.jinja2` | `{# #}` | Python templating |
 
 ### 🔧 **Configuration & Data**
 

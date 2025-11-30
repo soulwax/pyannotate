@@ -1,0 +1,8 @@
+<div class="card">
+  <h2>{{cardTitle}}</h2>
+  <p>{{cardDescription}}</p>
+  {{#hasButton}}
+    <button>{{buttonText}}</button>
+  {{/hasButton}}
+</div>
+

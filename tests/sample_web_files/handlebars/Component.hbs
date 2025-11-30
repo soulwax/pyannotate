@@ -1,0 +1,12 @@
+<div class="component">
+  <h1>{{title}}</h1>
+  <p>{{description}}</p>
+  {{#if items}}
+    <ul>
+      {{#each items}}
+        <li>{{this}}</li>
+      {{/each}}
+    </ul>
+  {{/if}}
+</div>
+

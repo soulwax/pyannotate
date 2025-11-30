@@ -1,0 +1,12 @@
+<div class="component">
+  <h2>{{ component.title }}</h2>
+  <p>{{ component.description }}</p>
+  {% if component.items %}
+    <ul>
+      {% for item in component.items %}
+        <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+

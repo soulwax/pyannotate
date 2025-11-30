@@ -1,4 +1,31 @@
 <!-- markdownlint-disable MD025 MD024 -->
+# What's New in Version 0.9.0
+
+## 🌟 Major Features
+
+### 🌐 Expanded Web Framework Support
+
+Added support for **7 additional popular web templating frameworks**, bringing comprehensive coverage to modern web development:
+
+**New Web Frameworks & Templating Languages:**
+
+- **Handlebars** (`.hbs`, `.handlebars`) - `<!-- -->` comments
+- **EJS** (`.ejs`) - `<!-- -->` comments (Embedded JavaScript)
+- **Pug/Jade** (`.pug`, `.jade`) - `//` comments
+- **Mustache** (`.mustache`, `.mst`) - `<!-- -->` comments
+- **Twig** (`.twig`) - `{# #}` comments (PHP templating)
+- **Jinja2** (`.jinja`, `.jinja2`) - `{# #}` comments (Python templating)
+- **MDX** (`.mdx`) - `<!-- -->` comments (Markdown + JSX)
+
+All new frameworks include:
+
+- Proper comment style detection for each template language
+- Special handling for template syntax preservation
+- Comprehensive test coverage
+- Sample files demonstrating usage
+
+---
+
 # What's New in Version 0.8.0
 
 ## 🌟 Major Features

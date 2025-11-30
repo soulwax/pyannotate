@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{pageTitle}}</title>
+</head>
+<body>
+  <header>
+    <nav>
+      {{#each navigation}}
+        <a href="{{url}}">{{label}}</a>
+      {{/each}}
+    </nav>
+  </header>
+  <main>
+    {{{body}}}
+  </main>
+</body>
+</html>
+

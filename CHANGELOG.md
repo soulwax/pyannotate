@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD025 MD024 -->
 # What's New in Version 0.7.0
 
 ## 🌟 Major Features
@@ -12,6 +13,7 @@
 - **Automatic formatting**: Each template line gets appropriate comment style for the file type
 
 **Example:**
+
 ```yaml
 header:
   template: |
@@ -31,6 +33,7 @@ header:
 - **File filtering**: Extend ignored files and directories via configuration
 
 **Example `.pyannotate.yaml`:**
+
 ```yaml
 header:
   author: "Your Name"
@@ -51,11 +54,13 @@ files:
 - **Enhanced logging**: Better visibility into what operations would be performed
 
 **Usage:**
+
 ```bash
 pyannotate --dry-run
 ```
 
 **Python API:**
+
 ```python
 from pyannotate.annotate_headers import walk_directory
 stats = walk_directory(Path.cwd(), Path.cwd(), dry_run=True)
@@ -77,6 +82,7 @@ stats = walk_directory(Path.cwd(), Path.cwd(), dry_run=True)
 - **Automatic formatting**: Each template line gets appropriate comment style for the file type
 
 **Example:**
+
 ```yaml
 header:
   template: |
@@ -96,6 +102,7 @@ header:
 - **File filtering**: Extend ignored files and directories via configuration
 
 **Example `.pyannotate.yaml`:**
+
 ```yaml
 header:
   author: "Your Name"
@@ -116,11 +123,13 @@ files:
 - **Enhanced logging**: Better visibility into what operations would be performed
 
 **Usage:**
+
 ```bash
 pyannotate --dry-run
 ```
 
 **Python API:**
+
 ```python
 from pyannotate.annotate_headers import walk_directory
 stats = walk_directory(Path.cwd(), Path.cwd(), dry_run=True)

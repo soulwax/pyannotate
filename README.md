@@ -369,7 +369,7 @@ ignored_directories = ["local_data"]
 - `version` - Version string (optional)
 - `include_date` - Whether to include date in headers (default: `false`)
 - `date_format` - Date format string using Python strftime (default: `"%Y-%m-%d"`)
-- `template` - Custom header template with variables (optional, for future use)
+- `template` - **Custom header template with variables** (see Custom Header Templates section below)
 
 **File Configuration:**
 
@@ -508,7 +508,7 @@ The project maintains comprehensive test coverage including:
 ### 🚧 **Planned Features**
 
 - [x] **Configuration files**: YAML/JSON/TOML config for project-specific settings
-- [ ] **Custom templates**: Configurable header templates with variables
+- [x] **Custom templates**: Configurable header templates with variables
 - [ ] **Metadata insertion**: Automatic author/date/version information
 - [ ] **Git integration**: Pre-commit hooks and Git-aware processing
 - [x] **Dry-run mode**: Preview changes before applying

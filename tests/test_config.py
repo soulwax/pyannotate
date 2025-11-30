@@ -1,4 +1,5 @@
 # File: tests/test_config.py
+# pylint: disable=duplicate-code
 
 """Tests for configuration file loading."""
 

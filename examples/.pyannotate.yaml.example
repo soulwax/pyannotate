@@ -15,8 +15,16 @@ header:
   date_format: "%Y-%m-%d"  # Python strftime format
   
   # Custom header template (optional)
-  # Use variables: {file_path}, {author}, {date}, {version}
-  # template: "File: {file_path}\nAuthor: {author}\nDate: {date}"
+  # Use variables: {file_path}, {file_name}, {file_stem}, {file_suffix}, {file_dir}
+  #                {author}, {author_email}, {date}, {version}
+  # Use {variable|default} for default values if variable is missing
+  # Multi-line templates are supported - each line gets comment formatting automatically
+  # Example:
+  # template: |
+  #   File: {file_path}
+  #   Author: {author|Unknown}
+  #   Date: {date}
+  #   Version: {version|1.0.0}
 
 # File processing configuration
 files:

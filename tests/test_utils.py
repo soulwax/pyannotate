@@ -1,4 +1,5 @@
 # File: tests/test_utils.py
+# pylint: disable=duplicate-code
 
 """Shared utilities for tests to reduce code duplication."""
 

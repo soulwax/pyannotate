@@ -1,6 +1,90 @@
+# What's New in Version 0.7.0
+
+## 🌟 Major Features
+
+### 🎨 Custom Header Templates
+
+- **Full creative freedom**: Design your own header format with complete control
+- **Variable substitution**: Use `{file_path}`, `{author}`, `{date}`, `{version}`, and more
+- **Default values**: Use `{variable|default}` syntax for missing variables
+- **Multi-line support**: Create complex multi-line headers with automatic comment formatting
+- **File-specific variables**: Access `{file_name}`, `{file_stem}`, `{file_suffix}`, `{file_dir}`
+- **Automatic formatting**: Each template line gets appropriate comment style for the file type
+
+**Example:**
+```yaml
+header:
+  template: |
+    File: {file_path}
+    Author: {author|Unknown}
+    Date: {date}
+    Version: {version|1.0.0}
+```
+
+### 📋 Configuration File Support
+
+- **Multiple format support**: YAML (`.pyannotate.yaml`), JSON (`.pyannotate.json`), and TOML (`pyproject.toml`)
+- **Project-specific settings**: Configure header metadata, ignored files/directories per project
+- **Automatic discovery**: Config files are automatically found by walking up the directory tree
+- **Backward compatible**: Works without config files (uses sensible defaults)
+- **Header configuration**: Set author, email, version, date format (ready for future metadata features)
+- **File filtering**: Extend ignored files and directories via configuration
+
+**Example `.pyannotate.yaml`:**
+```yaml
+header:
+  author: "Your Name"
+  include_date: true
+files:
+  ignored_files: ["custom.txt"]
+  ignored_directories: ["temp"]
+```
+
+**Note:** For YAML support, install `pyyaml`. For TOML on Python < 3.11, install `tomli`.
+
+### 🔍 Dry-Run Mode
+
+- **Preview changes before applying**: New `--dry-run` flag allows you to see what would be modified without actually changing files
+- **Statistics summary**: Dry-run mode provides a summary of files that would be modified, skipped, or remain unchanged
+- **Safe testing**: Perfect for reviewing changes before committing or testing configuration
+- **Programmatic API**: Both `process_file()` and `walk_directory()` now support `dry_run` parameter
+- **Enhanced logging**: Better visibility into what operations would be performed
+
+**Usage:**
+```bash
+pyannotate --dry-run
+```
+
+**Python API:**
+```python
+from pyannotate.annotate_headers import walk_directory
+stats = walk_directory(Path.cwd(), Path.cwd(), dry_run=True)
+```
+
+---
+
 # What's New in Version 0.6.0
 
 ## 🌟 New Features
+
+### 🎨 Custom Header Templates
+
+- **Full creative freedom**: Design your own header format with complete control
+- **Variable substitution**: Use `{file_path}`, `{author}`, `{date}`, `{version}`, and more
+- **Default values**: Use `{variable|default}` syntax for missing variables
+- **Multi-line support**: Create complex multi-line headers with automatic comment formatting
+- **File-specific variables**: Access `{file_name}`, `{file_stem}`, `{file_suffix}`, `{file_dir}`
+- **Automatic formatting**: Each template line gets appropriate comment style for the file type
+
+**Example:**
+```yaml
+header:
+  template: |
+    File: {file_path}
+    Author: {author|Unknown}
+    Date: {date}
+    Version: {version|1.0.0}
+```
 
 ### 📋 Configuration File Support
 

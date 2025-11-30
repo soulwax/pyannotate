@@ -1,10 +1,13 @@
 # File: src/pyannotate/annotate_headers.py
+# pylint: disable=too-many-lines
 
 """Core functionality for adding and updating file headers."""
 
 import logging
 import os
+import re
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -323,10 +326,156 @@ def _normalize_path(path: str) -> str:
     return path.replace(os.sep, "/")
 
 
-def _create_header(file_path: Path, project_root: Path) -> str:
-    """Create the header content for a file."""
+def _get_template_variables(
+    file_path: Path, project_root: Path, config: Optional[PyAnnotateConfig] = None
+) -> Dict[str, str]:
+    """
+    Get all available template variables.
+
+    Args:
+        file_path: Path to the file being processed
+        project_root: Root directory of the project
+        config: Optional configuration object
+
+    Returns:
+        Dictionary of variable names to values
+    """
     relative_path = os.path.relpath(file_path, project_root)
-    return f"File: {_normalize_path(relative_path)}"
+    variables: Dict[str, str] = {
+        "file_path": _normalize_path(relative_path),
+        "file_name": file_path.name,
+        "file_stem": file_path.stem,
+        "file_suffix": file_path.suffix,
+        "file_dir": _normalize_path(os.path.relpath(file_path.parent, project_root)),
+    }
+
+    # Add config-based variables if available
+    if config:
+        if config.header.author:
+            variables["author"] = config.header.author
+        if config.header.author_email:
+            variables["author_email"] = config.header.author_email
+        if config.header.version:
+            variables["version"] = config.header.version
+        if config.header.include_date:
+            try:
+                date_str = datetime.now().strftime(config.header.date_format)
+                variables["date"] = date_str
+            except (ValueError, TypeError):
+                # Invalid date format, use default
+                variables["date"] = datetime.now().strftime("%Y-%m-%d")
+
+    return variables
+
+
+def _render_template(
+    template: str, variables: Dict[str, str], comment_start: str, comment_end: str
+) -> str:
+    """
+    Render a template string with variable substitution.
+
+    Supports:
+    - {variable_name} - Simple variable substitution
+    - {variable_name|default} - Variable with default value if not present
+    - Multi-line templates (each line gets comment formatting)
+
+    Args:
+        template: Template string with {variable} placeholders
+        variables: Dictionary of variable names to values
+        comment_start: Comment start marker
+        comment_end: Comment end marker
+
+    Returns:
+        Rendered template with comment formatting applied
+    """
+    lines = template.splitlines()
+    rendered_lines: List[str] = []
+
+    for line in lines:
+        # Skip empty lines in template (user controls spacing)
+        if not line.strip():
+            rendered_lines.append("")
+            continue
+
+        # Substitute variables in the line
+        rendered_line = line
+        # Find all {variable} or {variable|default} patterns
+
+        def replace_var(match) -> str:
+            var_expr = match.group(1)
+            if "|" in var_expr:
+                var_name, default = var_expr.split("|", 1)
+                var_name = var_name.strip()
+                default = default.strip()
+                return variables.get(var_name, default) or ""
+            return variables.get(var_expr, "") or ""
+
+        # Match {variable} or {variable|default}
+        pattern = r"\{([^}]+)\}"
+        rendered_line = re.sub(pattern, replace_var, rendered_line)
+
+        # Apply comment formatting
+        if comment_end:
+            formatted_line = f"{comment_start} {rendered_line} {comment_end}"
+        else:
+            formatted_line = f"{comment_start} {rendered_line}"
+
+        rendered_lines.append(formatted_line)
+
+    return "\n".join(rendered_lines)
+
+
+def _create_header(
+    file_path: Path, project_root: Path, config: Optional[PyAnnotateConfig] = None
+) -> str:
+    """
+    Create the header content for a file.
+
+    If a template is provided in config, uses that. Otherwise uses default format.
+
+    Args:
+        file_path: Path to the file
+        project_root: Root directory of the project
+        config: Optional configuration object
+
+    Returns:
+        Header content string (may be multi-line)
+    """
+    comment_style = _get_comment_style(file_path)
+    comment_start = comment_style[0] if comment_style else "#"
+    comment_end = comment_style[1] if comment_style else ""
+
+    # Get template variables
+    variables = _get_template_variables(file_path, project_root, config)
+
+    # Use custom template if provided
+    if config and config.header.template:
+        return _render_template(config.header.template, variables, comment_start, comment_end)
+
+    # Default behavior: create simple header with optional metadata
+    header_lines: List[str] = []
+    header_lines.append(f"File: {variables['file_path']}")
+
+    # Add metadata if configured
+    if config:
+        if config.header.author:
+            header_lines.append(f"Author: {config.header.author}")
+        if config.header.author_email:
+            header_lines.append(f"Email: {config.header.author_email}")
+        if config.header.version:
+            header_lines.append(f"Version: {config.header.version}")
+        if config.header.include_date and "date" in variables:
+            header_lines.append(f"Date: {variables['date']}")
+
+    # Format each line with comments
+    formatted_lines: List[str] = []
+    for line in header_lines:
+        if comment_end:
+            formatted_lines.append(f"{comment_start} {line} {comment_end}")
+        else:
+            formatted_lines.append(f"{comment_start} {line}")
+
+    return "\n".join(formatted_lines)
 
 
 def _is_special_xml_file(file_path: Path) -> bool:
@@ -357,9 +506,9 @@ def _is_special_xml_file(file_path: Path) -> bool:
     return file_path.suffix.lower() in xml_extensions
 
 
-def _process_empty_file(header_line: str) -> str:
+def _process_empty_file(header_block: str) -> str:
     """Process an empty file (ensure trailing newline)."""
-    return f"{header_line}\n"
+    return f"{header_block}\n"
 
 
 def _create_header_line(comment_start: str, comment_end: str, header: str) -> str:
@@ -577,11 +726,11 @@ def _compose_with_header_block(header_block: str, body_lines: List[str]) -> str:
     return result
 
 
-def _process_shebang_file(lines: List[str], header_line: str, comment_start: str) -> str:
+def _process_shebang_file(lines: List[str], header_block: str, comment_start: str) -> str:
     """Process a file with a shebang line."""
     shebang = lines[0]
     remaining_lines = _remove_existing_header(lines[1:], comment_start)
-    rest = _compose_with_header_block(header_line, remaining_lines)
+    rest = _compose_with_header_block(header_block, remaining_lines)
     # Prepend shebang (compose already ensures trailing newline)
     result = f"{shebang}\n{rest}"
     if not result.endswith("\n"):
@@ -589,13 +738,13 @@ def _process_shebang_file(lines: List[str], header_line: str, comment_start: str
     return result
 
 
-def _process_xml_like_file(lines: List[str], header_line: str, comment_start: str) -> str:
+def _process_xml_like_file(lines: List[str], header_block: str, comment_start: str) -> str:
     """
     Process XML-like files while preserving declarations.
     Enhanced version to better handle web framework templates.
     """
     if not lines:
-        return _process_empty_file(header_line)
+        return _process_empty_file(header_block)
 
     # Store all declaration lines and document type definitions
     declarations: List[str] = []
@@ -620,7 +769,7 @@ def _process_xml_like_file(lines: List[str], header_line: str, comment_start: st
     if declarations:
         # Remove any existing header from remaining content
         remaining_lines = _remove_existing_header(lines[content_start:], comment_start)
-        composed = _compose_with_header_block(header_line, remaining_lines)
+        composed = _compose_with_header_block(header_block, remaining_lines)
         # Prepend declarations (each is already a single line)
         result = "\n".join(declarations) + "\n" + composed
         if not result.endswith("\n"):
@@ -629,11 +778,11 @@ def _process_xml_like_file(lines: List[str], header_line: str, comment_start: st
 
     # If no declarations, treat as regular file with header at top
     remaining_lines = _remove_existing_header(lines, comment_start)
-    return _compose_with_header_block(header_line, remaining_lines)
+    return _compose_with_header_block(header_block, remaining_lines)
 
 
 def _process_web_framework_file(
-    file_path: Path, lines: List[str], header_line: str, comment_start: str
+    file_path: Path, lines: List[str], header_block: str, comment_start: str
 ) -> str:
     """
     Special handling for web framework files like Vue, Svelte, etc.
@@ -650,11 +799,11 @@ def _process_web_framework_file(
 
         if has_template or has_script_setup:
             # For Vue files with template or script setup, use special XML processing
-            return _process_xml_like_file(lines, header_line, comment_start)
+            return _process_xml_like_file(lines, header_block, comment_start)
 
     # Default back to regular header placement for other cases
     remaining_lines = _remove_existing_header(lines, comment_start)
-    return _compose_with_header_block(header_line, remaining_lines)
+    return _compose_with_header_block(header_block, remaining_lines)
 
 
 def is_binary(file_path: Path) -> bool:
@@ -815,20 +964,29 @@ def _determine_new_content(
     content: str,
     comment_start: str,
     comment_end: str,
-    header_line: str,
+    header_block: str,
 ) -> Optional[str]:
-    """Pure function to compute new content for a file given its current content."""
+    """
+    Pure function to compute new content for a file given its current content.
+
+    Args:
+        file_path: Path to the file
+        content: Current file content
+        comment_start: Comment start marker
+        comment_end: Comment end marker
+        header_block: Complete header block (may be multi-line)
+    """
     lines = content.splitlines()
     metadata_lines = _collect_metadata_lines(lines, comment_start)
 
     if not lines:
-        return _process_empty_file(header_line)
+        return _process_empty_file(header_block)
     if lines[0].startswith("#!"):
-        return _process_shebang_file(lines, header_line, comment_start)
+        return _process_shebang_file(lines, header_block, comment_start)
     if _is_special_xml_file(file_path):
-        return _process_xml_like_file(lines, header_line, comment_start)
+        return _process_xml_like_file(lines, header_block, comment_start)
     if file_path.suffix.lower() in {".vue", ".svelte", ".astro"}:
-        return _process_web_framework_file(file_path, lines, header_line, comment_start)
+        return _process_web_framework_file(file_path, lines, header_block, comment_start)
 
     if _has_existing_header(lines, comment_start):
         existing_pattern = _detect_header_pattern(file_path)
@@ -845,8 +1003,29 @@ def _determine_new_content(
                 else:
                     break
             existing_header = "\n".join(header_lines)
+
+            # Check if header_block is multi-line (template) or single-line (default)
+            header_block_lines = header_block.split("\n")
+            is_multi_line_template = len(header_block_lines) > 1
+
+            if is_multi_line_template:
+                # For multi-line templates, replace the entire existing header
+                # This preserves the full template structure
+                remaining_lines = _remove_existing_header(lines, detected_start)
+                return _compose_with_header_block(header_block, remaining_lines)
+
+            # For single-line headers (default format), use merge logic for compatibility
+            # Extract first line of header_block for merging
+            first_header_line = header_block_lines[0]
+            # Remove comment markers to get just the content
+            if first_header_line.startswith(comment_start):
+                header_content = first_header_line[len(comment_start) :].strip()
+                if comment_end and header_content.endswith(comment_end):
+                    header_content = header_content[: -len(comment_end)].strip()
+            else:
+                header_content = first_header_line
             merged_header = _merge_headers(
-                existing_header, header_line[len(comment_start) + 1 :], comment_start, comment_end
+                existing_header, header_content, comment_start, comment_end
             )
             remaining_lines = _remove_existing_header(lines, detected_start)
             return _compose_with_header_block(merged_header, remaining_lines)
@@ -855,7 +1034,7 @@ def _determine_new_content(
         return None
 
     if metadata_lines:
-        combined_header = header_line + "\n" + "\n".join(metadata_lines)
+        combined_header = header_block + "\n" + "\n".join(metadata_lines)
         remaining_lines = [
             line for line in lines if line.strip() not in [l.strip() for l in metadata_lines]
         ]
@@ -863,8 +1042,8 @@ def _determine_new_content(
 
     # default: put header on top (ensure one blank line and trailing newline)
     if content.strip():
-        return _compose_with_header_block(header_line, content.splitlines())
-    return _process_empty_file(header_line)
+        return _compose_with_header_block(header_block, content.splitlines())
+    return _process_empty_file(header_block)
 
 
 def process_file(
@@ -897,10 +1076,9 @@ def process_file(
 
     try:
         content = _read_text_best_effort(file_path)
-        header = _create_header(file_path, project_root)
-        header_line = _create_header_line(comment_start, comment_end, header)
+        header_block = _create_header(file_path, project_root, config)
         new_content = _determine_new_content(
-            file_path, content, comment_start, comment_end, header_line
+            file_path, content, comment_start, comment_end, header_block
         )
 
         if new_content is not None and new_content != content:

@@ -62,6 +62,8 @@ PATTERNS = [
     FilePattern([".pl", ".pm"], "#", ""),  # Perl
     FilePattern([".rb"], "#", ""),  # Ruby
     FilePattern([".lua"], "--", ""),  # Lua
+    FilePattern([".vhd", ".vhdl"], "--", ""),  # VHDL
+    FilePattern([".adb", ".ads"], "--", ""),  # Ada
     FilePattern([".tcl"], "#", ""),  # Tcl
     FilePattern([".php"], "//", ""),  # PHP (can also use # but // is more common)
     # Shell and script enhancements
@@ -73,18 +75,35 @@ PATTERNS = [
     FilePattern([".go"], "//", ""),  # Go
     FilePattern([".rs"], "//", ""),  # Rust
     FilePattern([".zig"], "//", ""),  # Zig
+    FilePattern([".m", ".mm"], "//", ""),  # Objective-C
+    FilePattern([".groovy"], "//", ""),  # Groovy
+    FilePattern([".fs", ".fsx", ".fsi"], "//", ""),  # F#
+    FilePattern([".v"], "//", ""),  # V language
     # Functional languages
     FilePattern([".ex", ".exs"], "#", ""),  # Elixir
     FilePattern([".erl", ".hrl"], "%", ""),  # Erlang
     FilePattern([".hs"], "--", ""),  # Haskell
+    FilePattern([".ml", ".mli"], "(*", "*)"),  # OCaml
+    FilePattern([".pas", ".pp"], "//", ""),  # Pascal/Delphi (modern uses //)
+    FilePattern([".asm", ".s"], ";", ""),  # Assembly
+    FilePattern([".vb"], "'", ""),  # VB.NET
     FilePattern([".lisp", ".cl", ".el"], ";;", ""),  # Lisp family
+    FilePattern([".clj", ".cljs", ".cljc"], ";;", ""),  # Clojure
     # Data science
     FilePattern([".r", ".R"], "#", ""),  # R
     FilePattern([".jl"], "#", ""),  # Julia
+    FilePattern([".nim"], "#", ""),  # Nim
+    FilePattern([".cr"], "#", ""),  # Crystal
+    FilePattern([".nix"], "#", ""),  # Nix
+    FilePattern([".tf", ".tfvars"], "#", ""),  # Terraform
+    FilePattern([".hcl"], "#", ""),  # HCL (HashiCorp Configuration Language)
     # Markup and documentation
     FilePattern([".rst"], ".. ", ""),  # reStructuredText
     # Database
     FilePattern([".sql"], "--", ""),  # SQL
+    # Legacy/mainframe
+    FilePattern([".cob", ".cbl"], "*", ""),  # COBOL (fixed format, * in column 7)
+    FilePattern([".f", ".f90", ".f95", ".f03", ".f08"], "!", ""),  # Fortran
     # Qt specific files
     FilePattern([".pro", ".pri"], "#", ""),  # Qt project files
     FilePattern([".ui", ".qrc"], "<!--", "-->"),  # Qt UI and resource files

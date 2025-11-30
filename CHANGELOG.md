@@ -1,4 +1,42 @@
 <!-- markdownlint-disable MD025 MD024 -->
+# What's New in Version 0.8.0
+
+## 🌟 Major Features
+
+### 🌐 Expanded Language Support
+
+Added support for **18 additional programming languages**, bringing total support to **70+ languages and file formats**:
+
+**New Languages Added:**
+
+- **Objective-C** (`.m`, `.mm`) - `//` comments
+- **Groovy** (`.groovy`) - `//` comments
+- **Clojure** (`.clj`, `.cljs`, `.cljc`) - `;;` comments
+- **F#** (`.fs`, `.fsx`, `.fsi`) - `//` comments
+- **V** (`.v`) - `//` comments
+- **Nim** (`.nim`) - `#` comments
+- **Crystal** (`.cr`) - `#` comments
+- **Nix** (`.nix`) - `#` comments
+- **Terraform** (`.tf`, `.tfvars`) - `#` comments
+- **HCL** (`.hcl`) - `#` comments
+- **VHDL** (`.vhd`, `.vhdl`) - `--` comments
+- **Ada** (`.adb`, `.ads`) - `--` comments
+- **OCaml** (`.ml`, `.mli`) - `(* *)` comments
+- **Pascal/Delphi** (`.pas`, `.pp`) - `//` comments
+- **Assembly** (`.asm`, `.s`) - `;` comments
+- **VB.NET** (`.vb`) - `'` comments
+- **Fortran** (`.f`, `.f90`, `.f95`, `.f03`, `.f08`) - `!` comments
+- **COBOL** (`.cob`, `.cbl`) - `*` comments
+
+All new languages include comprehensive test coverage to ensure proper comment style detection and header processing.
+
+### 🐛 Bug Fixes
+
+- **Fixed multi-line template truncation**: Multi-line templates are now fully preserved when merging with existing headers instead of only using the first line
+- **Improved header merging logic**: Templates with multiple lines now replace existing headers entirely, preserving the complete template structure
+
+---
+
 # What's New in Version 0.7.0
 
 ## 🌟 Major Features

@@ -127,6 +127,10 @@ PyAnnotate automatically recognizes a vast array of file types and applies appro
 | **Zig** | `.zig` | `//` |
 | **Dart** | `.dart` | `//` |
 | **PHP** | `.php` | `//` |
+| **Objective-C** | `.m`, `.mm` | `//` |
+| **Groovy** | `.groovy` | `//` |
+| **F#** | `.fs`, `.fsx`, `.fsi` | `//` |
+| **V** | `.v` | `//` |
 
 ### 🔧 **Systems & Scripting**
 
@@ -139,6 +143,8 @@ PyAnnotate automatically recognizes a vast array of file types and applies appro
 | **Perl** | `.pl`, `.pm` | `#` |
 | **Lua** | `.lua` | `--` |
 | **Tcl** | `.tcl` | `#` |
+| **VHDL** | `.vhd`, `.vhdl` | `--` |
+| **Ada** | `.adb`, `.ads` | `--` |
 
 ### 🧮 **Functional & Data Science**
 
@@ -146,10 +152,22 @@ PyAnnotate automatically recognizes a vast array of file types and applies appro
 |----------|------------|---------------|
 | **Haskell** | `.hs` | `--` |
 | **Lisp Family** | `.lisp`, `.cl`, `.el` | `;;` |
+| **Clojure** | `.clj`, `.cljs`, `.cljc` | `;;` |
 | **Elixir** | `.ex`, `.exs` | `#` |
 | **Erlang** | `.erl`, `.hrl` | `%` |
+| **OCaml** | `.ml`, `.mli` | `(* *)` |
 | **R** | `.r`, `.R` | `#` |
 | **Julia** | `.jl` | `#` |
+| **Nim** | `.nim` | `#` |
+| **Crystal** | `.cr` | `#` |
+| **Nix** | `.nix` | `#` |
+| **Terraform** | `.tf`, `.tfvars` | `#` |
+| **HCL** | `.hcl` | `#` |
+| **Pascal/Delphi** | `.pas`, `.pp` | `//` |
+| **Assembly** | `.asm`, `.s` | `;` |
+| **VB.NET** | `.vb` | `'` |
+| **Fortran** | `.f`, `.f90`, `.f95`, `.f03`, `.f08` | `!` |
+| **COBOL** | `.cob`, `.cbl` | `*` |
 
 ### 🌐 **Web Technologies**
 

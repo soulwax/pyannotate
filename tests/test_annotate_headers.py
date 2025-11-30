@@ -68,6 +68,22 @@ class TestBasicFileProcessing:
         ), "Header not added correctly for .js file"
         assert "console.log('Hello, World!');" in content, "Original content preserved"
 
+    def test_dart_file_processing(self):
+        """Test processing Dart files."""
+        dart_file = TEST_DIR / "test.dart"
+        dart_content = """void main() {
+  print('Hello, World!');
+}
+"""
+        dart_file.write_text(dart_content)
+        process_file(dart_file, TEST_DIR)
+        content = dart_file.read_text()
+        assert content.startswith(
+            "// File: test.dart\n"
+        ), "Header not added correctly for .dart file"
+        assert "void main()" in content, "Original content preserved"
+        assert "print('Hello, World!');" in content, "Dart code preserved"
+
     def test_unsupported_file_type_skipped(self):
         """Test that unsupported file types are skipped."""
         file_path = TEST_DIR / "unsupported_file.dat"
@@ -176,6 +192,13 @@ class TestCommentStyleDetection:
         js_file.write_text("console.log('test');")
         comment_style = _get_comment_style(js_file)
         assert comment_style == ("//", ""), "Incorrect comment style for JavaScript"
+
+    def test_dart_comment_style(self):
+        """Test Dart comment style detection."""
+        dart_file = TEST_DIR / "test.dart"
+        dart_file.write_text("void main() { print('test'); }")
+        comment_style = _get_comment_style(dart_file)
+        assert comment_style == ("//", ""), "Incorrect comment style for Dart"
 
     def test_css_comment_style(self):
         """Test CSS comment style detection."""
@@ -560,7 +583,7 @@ class TestExistingHeaderHandling:
         css_file.write_text("/* src/styles/globals.css */\nbody { color: red; }\n")
 
         # Process using repo root so header will contain the relative path
-        process_file(css_file, Path('.').resolve())
+        process_file(css_file, Path(".").resolve())
 
         processed = css_file.read_text()
 

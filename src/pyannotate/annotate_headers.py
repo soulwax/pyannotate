@@ -37,6 +37,7 @@ PATTERNS = [
             ".swift",
             ".kt",
             ".scala",
+            ".dart",
         ],
         "//",
         "",

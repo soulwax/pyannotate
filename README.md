@@ -103,6 +103,7 @@ PyAnnotate automatically recognizes a vast array of file types and applies appro
 | **Kotlin** | `.kt` | `//` |
 | **Scala** | `.scala` | `//` |
 | **Zig** | `.zig` | `//` |
+| **Dart** | `.dart` | `//` |
 | **PHP** | `.php` | `//` |
 
 ### 🔧 **Systems & Scripting**

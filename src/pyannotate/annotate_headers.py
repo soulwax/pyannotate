@@ -857,15 +857,25 @@ def _determine_new_content(
     return _process_empty_file(header_line)
 
 
-def process_file(file_path: Path, project_root: Path) -> None:
-    """Process a single file, adding or updating its header."""
+def process_file(file_path: Path, project_root: Path, dry_run: bool = False) -> dict:
+    """
+    Process a single file, adding or updating its header.
+
+    Args:
+        file_path: Path to the file to process
+        project_root: Root directory of the project
+        dry_run: If True, preview changes without modifying files
+
+    Returns:
+        Dictionary with status information: {"status": "modified|skipped|unchanged"}
+    """
     if _should_skip_path(file_path):
-        return
+        return {"status": "skipped", "reason": "file_ignored"}
 
     comment_style = _get_comment_style(file_path)
     if not comment_style:
         logging.debug("Skipping unsupported file type: %s", file_path)
-        return
+        return {"status": "skipped", "reason": "unsupported_type"}
 
     comment_start, comment_end = comment_style
 
@@ -878,22 +888,50 @@ def process_file(file_path: Path, project_root: Path) -> None:
         )
 
         if new_content is not None and new_content != content:
-            file_path.write_text(new_content, encoding="utf-8")
-            logging.info("Updated header in: %s", file_path)
-        else:
-            logging.debug("No changes needed for: %s", file_path)
+            if dry_run:
+                logging.info("[DRY-RUN] Would update header in: %s", file_path)
+            else:
+                file_path.write_text(new_content, encoding="utf-8")
+                logging.info("Updated header in: %s", file_path)
+            return {"status": "modified"}
+        logging.debug("No changes needed for: %s", file_path)
+        return {"status": "unchanged"}
     except (OSError, UnicodeDecodeError) as e:
         logging.debug("Failed to process %s: %s", file_path, e)
+        return {"status": "skipped", "reason": str(e)}
 
 
-def walk_directory(directory: Path, project_root: Path) -> None:
-    """Walk through directory and process files recursively."""
+def walk_directory(directory: Path, project_root: Path, dry_run: bool = False) -> dict:
+    """
+    Walk through directory and process files recursively.
+
+    Args:
+        directory: Directory to walk through
+        project_root: Root directory of the project
+        dry_run: If True, preview changes without modifying files
+
+    Returns:
+        Dictionary with statistics: {"modified": int, "skipped": int, "unchanged": int}
+    """
+    stats = {"modified": 0, "skipped": 0, "unchanged": 0}
+
     try:
         for item in directory.iterdir():
             if item.is_dir():
                 if item.name not in IGNORED_DIRS:
-                    walk_directory(item, project_root)
+                    sub_stats = walk_directory(item, project_root, dry_run=dry_run)
+                    stats["modified"] += sub_stats["modified"]
+                    stats["skipped"] += sub_stats["skipped"]
+                    stats["unchanged"] += sub_stats["unchanged"]
             else:
-                process_file(item, project_root)
+                result = process_file(item, project_root, dry_run=dry_run)
+                if result["status"] == "modified":
+                    stats["modified"] += 1
+                elif result["status"] == "skipped":
+                    stats["skipped"] += 1
+                elif result["status"] == "unchanged":
+                    stats["unchanged"] += 1
     except OSError as e:
         logging.error("Error accessing directory %s: %s", directory, e)
+
+    return stats

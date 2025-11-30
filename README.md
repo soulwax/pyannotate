@@ -66,6 +66,12 @@ pyannotate -d /path/to/project
 
 # Enable verbose logging
 pyannotate -v
+
+# Preview changes without modifying files (dry-run mode)
+pyannotate --dry-run
+
+# Combine options
+pyannotate -d /path/to/project --dry-run -v
 ```
 
 ### 🐍 **Python API**
@@ -81,7 +87,22 @@ process_file(Path("example.py"), Path.cwd())
 
 # Process an entire directory
 walk_directory(Path.cwd(), Path.cwd())
+
+# Use dry-run mode to preview changes
+from pyannotate.annotate_headers import process_file, walk_directory
+
+# Preview changes for a single file
+result = process_file(Path("example.py"), Path.cwd(), dry_run=True)
+print(f"Status: {result['status']}")  # 'modified', 'skipped', or 'unchanged'
+
+# Preview changes for entire directory
+stats = walk_directory(Path.cwd(), Path.cwd(), dry_run=True)
+print(f"Would modify: {stats['modified']} files")
+print(f"Would skip: {stats['skipped']} files")
+print(f"Unchanged: {stats['unchanged']} files")
 ```
+<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
+read_file
 
 ---
 
@@ -217,6 +238,25 @@ PyAnnotate automatically skips files that shouldn't be modified:
 ---
 
 ## 🎯 Advanced Features
+
+### 🔍 **Dry-Run Mode**
+
+Preview changes before applying them! Use `--dry-run` to see what would be modified without actually changing any files:
+
+```bash
+pyannotate --dry-run
+```
+
+**Output includes:**
+- List of files that would be modified
+- Summary statistics (modified, skipped, unchanged counts)
+- Safe preview of all changes
+
+This is especially useful for:
+- Reviewing changes before committing
+- Understanding the scope of modifications
+- Testing configuration changes
+- CI/CD pipelines for validation
 
 ### 🧠 **Intelligent Header Processing**
 
@@ -386,7 +426,7 @@ The project maintains comprehensive test coverage including:
 - [ ] **Custom templates**: Configurable header templates with variables
 - [ ] **Metadata insertion**: Automatic author/date/version information
 - [ ] **Git integration**: Pre-commit hooks and Git-aware processing
-- [ ] **Dry-run mode**: Preview changes before applying
+- [x] **Dry-run mode**: Preview changes before applying
 - [ ] **Rollback functionality**: Undo header additions
 
 ### 🌐 **Language Expansion**

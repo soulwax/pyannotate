@@ -26,13 +26,24 @@ def test_parse_args():
     args = parse_args(["-d", "/some/path", "-v"])
     assert args.directory == Path("/some/path")
     assert args.verbose
+    assert not args.dry_run
+
+
+def test_parse_args_dry_run():
+    """Test argument parsing with dry-run flag."""
+    args = parse_args(["--dry-run"])
+    assert args.dry_run
+    args = parse_args(["-d", "/some/path", "--dry-run", "-v"])
+    assert args.directory == Path("/some/path")
+    assert args.dry_run
+    assert args.verbose
 
 
 def test_main_directory_not_found():
     """Test main function with non-existent directory."""
     with patch("pyannotate.cli.parse_args") as mock_parse_args:
         mock_parse_args.return_value = argparse.Namespace(
-            directory=Path("nonexistent"), verbose=False
+            directory=Path("nonexistent"), verbose=False, dry_run=False
         )
         exit_code = main()
         assert exit_code == 1
@@ -46,10 +57,30 @@ def test_main_successful_run():
 
         with patch("pyannotate.cli.parse_args") as mock_parse_args:
             mock_parse_args.return_value = argparse.Namespace(
-                directory=Path(temp_path), verbose=False
+                directory=Path(temp_path), verbose=False, dry_run=False
             )
             exit_code = main()
             assert exit_code == 0
 
         content = test_file.read_text()
         assert "# File: test.py" in content
+
+
+def test_main_dry_run():
+    """Test main function with dry-run mode."""
+    with tempfile.TemporaryDirectory() as temp_path:
+        test_file = Path(temp_path) / "test.py"
+        original_content = "print('hello')"
+        test_file.write_text(original_content)
+
+        with patch("pyannotate.cli.parse_args") as mock_parse_args:
+            mock_parse_args.return_value = argparse.Namespace(
+                directory=Path(temp_path), verbose=False, dry_run=True
+            )
+            exit_code = main()
+            assert exit_code == 0
+
+        # File should not be modified in dry-run mode
+        content = test_file.read_text()
+        assert content == original_content
+        assert "# File: test.py" not in content

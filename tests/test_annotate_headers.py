@@ -597,3 +597,69 @@ class TestExistingHeaderHandling:
         # Original annotation and body preserved
         assert "src/styles/globals.css" in processed
         assert "body { color: red; }" in processed
+
+
+class TestDryRunMode:
+    """Test dry-run functionality."""
+
+    def test_dry_run_does_not_modify_files(self):
+        """Test that dry-run mode previews changes without modifying files."""
+        py_file = TEST_DIR / "dry_run_test.py"
+        original_content = "print('test')"
+        py_file.write_text(original_content)
+
+        # Process in dry-run mode
+        result = process_file(py_file, TEST_DIR, dry_run=True)
+
+        # File should not be modified
+        content = py_file.read_text()
+        assert content == original_content, "File was modified in dry-run mode"
+        assert "# File:" not in content, "Header was added in dry-run mode"
+        assert result["status"] == "modified", "Should report as modified"
+
+    def test_dry_run_walk_directory_returns_stats(self):
+        """Test that walk_directory returns statistics in dry-run mode."""
+        # Create test files
+        py_file = TEST_DIR / "dry_run_stats1.py"
+        js_file = TEST_DIR / "dry_run_stats2.js"
+        py_file.write_text("print('test')")
+        js_file.write_text("console.log('test');")
+
+        # Process in dry-run mode
+        stats = walk_directory(TEST_DIR, TEST_DIR, dry_run=True)
+
+        # Should return statistics
+        assert "modified" in stats
+        assert "skipped" in stats
+        assert "unchanged" in stats
+        assert isinstance(stats["modified"], int)
+        assert isinstance(stats["skipped"], int)
+        assert isinstance(stats["unchanged"], int)
+
+        # Files should not be modified
+        assert "# File:" not in py_file.read_text()
+        assert "// File:" not in js_file.read_text()
+
+    def test_dry_run_vs_normal_mode(self):
+        """Test that dry-run and normal mode produce same results except file writing."""
+        test_file = TEST_DIR / "dry_run_comparison.py"
+        original_content = "print('hello')"
+        test_file.write_text(original_content)
+
+        # Dry-run mode
+        dry_result = process_file(test_file, TEST_DIR, dry_run=True)
+        dry_content = test_file.read_text()
+
+        # Normal mode
+        normal_result = process_file(test_file, TEST_DIR, dry_run=False)
+        normal_content = test_file.read_text()
+
+        # Dry-run should not modify file
+        assert dry_content == original_content
+
+        # Normal mode should modify file
+        assert normal_content != original_content
+        assert "# File: dry_run_comparison.py" in normal_content
+
+        # Both should report same status
+        assert dry_result["status"] == normal_result["status"]

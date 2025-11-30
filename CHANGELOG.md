@@ -1,3 +1,28 @@
+# What's New in Version 0.6.0
+
+## 🌟 New Features
+
+### 🔍 Dry-Run Mode
+
+- **Preview changes before applying**: New `--dry-run` flag allows you to see what would be modified without actually changing files
+- **Statistics summary**: Dry-run mode provides a summary of files that would be modified, skipped, or remain unchanged
+- **Safe testing**: Perfect for reviewing changes before committing or testing configuration
+- **Programmatic API**: Both `process_file()` and `walk_directory()` now support `dry_run` parameter
+- **Enhanced logging**: Better visibility into what operations would be performed
+
+**Usage:**
+```bash
+pyannotate --dry-run
+```
+
+**Python API:**
+```python
+from pyannotate.annotate_headers import walk_directory
+stats = walk_directory(Path.cwd(), Path.cwd(), dry_run=True)
+```
+
+---
+
 # What's New in Version 0.5.0
 
 ## 🌟 Critical Improvements

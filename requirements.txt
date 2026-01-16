@@ -1,4 +1,4 @@
 setuptools>=45
 wheel>=0.37
 importlib-metadata>=8.0
-pathspec>=1.0.0
+pathspec>=0.10.3

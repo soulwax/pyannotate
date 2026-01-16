@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyannotate"
-version = "0.10.0"
+version = "0.11.0"
 description = "Python package to annotate files with headers."
 authors = [
     {name = "soulwax", email = "soulwax@nandcore.com"},
@@ -38,6 +38,11 @@ Issues = "https://github.com/soulwax/pyannotate/issues"
 
 [project.scripts]
 pyannotate = "pyannotate.cli:main"
+
+[project.optional-dependencies]
+yaml = ["pyyaml>=6.0"]
+gitignore = ["pathspec>=0.10.3"]
+toml = ["tomli>=2.0.0; python_version<'3.11'"]
 
 [tool.setuptools_scm]
 write_to = "src/pyannotate/_version.py"

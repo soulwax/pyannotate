@@ -1,4 +1,40 @@
 <!-- markdownlint-disable MD025 MD024 -->
+# What's New in Version 0.11.0
+
+## 🌟 Major Features
+
+### 📦 PyPI Publication Preparation
+
+PyAnnotate is now ready for PyPI distribution! The package has been fully configured for publication:
+
+- **Modern packaging**: Complete `pyproject.toml` configuration with PEP 621 compliance
+- **Optional dependencies**: Modular dependency system for enhanced features:
+  - `pyannotate[yaml]` - YAML configuration file support
+  - `pyannotate[gitignore]` - Full `.gitignore` support via `pathspec`
+  - `pyannotate[toml]` - TOML support for Python < 3.11
+- **Automated publishing**: GitHub Actions workflow for PyPI releases
+- **Distribution-ready**: Proper `MANIFEST.in` configuration excluding tests and examples
+- **Updated documentation**: Installation instructions for PyPI and source
+
+**Installation:**
+
+```bash
+# Basic installation
+pip install pyannotate
+
+# With optional dependencies
+pip install pyannotate[yaml,gitignore,toml]
+```
+
+**Publishing:**
+
+The package can be published to PyPI by:
+1. Creating a GitHub release (triggers automated publishing)
+2. Using the manual workflow dispatch in GitHub Actions
+3. Manual publishing with `twine upload dist/*`
+
+---
+
 # What's New in Version 0.10.0
 
 ## 🌟 Major Features

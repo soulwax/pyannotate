@@ -22,7 +22,29 @@
 
 ## 🛠️ Installation
 
-While the package is pending on PyPI, you can install it locally:
+### 📦 **Install from PyPI** (Recommended)
+
+```bash
+pip install pyannotate
+```
+
+**Optional dependencies** for enhanced functionality:
+
+```bash
+# For YAML configuration file support
+pip install pyannotate[yaml]
+
+# For .gitignore support (pathspec)
+pip install pyannotate[gitignore]
+
+# For TOML support on Python < 3.11
+pip install pyannotate[toml]
+
+# Install all optional dependencies
+pip install pyannotate[yaml,gitignore,toml]
+```
+
+### 🔧 **Install from Source** (Development)
 
 1. **Clone the repository:**
 
@@ -593,7 +615,7 @@ The project maintains comprehensive test coverage including:
 
 ### 📦 **Distribution**
 
-- [ ] **PyPI publication**: Official package distribution
+- [x] **PyPI publication**: Official package distribution
 - [ ] **Docker containers**: Containerized execution environments
 - [ ] **Package managers**: Homebrew, Scoop, APT packages
 

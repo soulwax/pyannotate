@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyannotate"
-version = "0.9.1"
+version = "0.10.0"
 description = "Python package to annotate files with headers."
 authors = [
     {name = "soulwax", email = "soulwax@nandcore.com"},
@@ -69,6 +69,7 @@ disable = [
     "C0209", # Consider using f-string
     "R0911", # Too many return statements
     "R0912", # Too many branches
+    "R0917", # Too many positional arguments
     "R1702", # Too many nested blocks
     "W0612", # Unused variable
     "W0705", # Catching previously caught exception type

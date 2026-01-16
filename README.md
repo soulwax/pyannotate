@@ -324,6 +324,40 @@ This is especially useful for:
 - **Binary Detection**: Content-based binary file detection beyond just extensions
 - **Whitespace Intelligence**: Smart handling of empty files and whitespace-only content
 
+### 🔀 **Git Integration**
+
+Seamlessly integrate PyAnnotate with your Git workflow:
+
+- **Git-aware processing**: Process only tracked or staged files with `--git` and `--staged` flags
+- **Automatic `.gitignore` respect**: Files ignored by git are automatically skipped (requires optional `pathspec` library)
+- **Git metadata extraction**: Use `--use-git-metadata` to automatically populate headers with:
+  - Author name (from git config or file history)
+  - Email address (from git config)
+  - Last modified date (from git log)
+- **Pre-commit hooks**: Install automatic header annotation with `--install-hook`
+- **Smart fallbacks**: Works gracefully even when git is unavailable
+
+**Usage:**
+
+```bash
+# Process only git-tracked files
+pyannotate --git
+
+# Process only staged files (perfect for pre-commit)
+pyannotate --staged
+
+# Use git metadata in headers
+pyannotate --use-git-metadata
+
+# Combine: process staged files with git metadata
+pyannotate --staged --use-git-metadata
+
+# Install pre-commit hook (auto-annotates on commit)
+pyannotate --install-hook
+```
+
+**Note:** For full `.gitignore` support, install `pathspec`: `pip install pathspec`
+
 ---
 
 ## ⚙️ **Configuration & Customization**
@@ -539,10 +573,10 @@ The project maintains comprehensive test coverage including:
 
 - [x] **Configuration files**: YAML/JSON/TOML config for project-specific settings
 - [x] **Custom templates**: Configurable header templates with variables
-- [ ] **Metadata insertion**: Automatic author/date/version information
-- [ ] **Git integration**: Pre-commit hooks and Git-aware processing
+- [x] **Metadata insertion**: Automatic author/date/version information (via git or config)
+- [x] **Git integration**: Pre-commit hooks and Git-aware processing
 - [x] **Dry-run mode**: Preview changes before applying
-- [ ] **Rollback functionality**: Undo header additions
+- [x] **Rollback functionality**: Undo header additions
 
 ### 🌐 **Language Expansion**
 

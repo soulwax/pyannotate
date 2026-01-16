@@ -271,9 +271,7 @@ def test_backup_relative_paths():
     # Check relative path is used (handle both / and \ separators)
     # Pathlib uses native separators, so on Windows it will be backslashes
     expected_paths = ["nested/nested.py", "nested\\nested.py"]
-    actual_key = next(
-        (k for k in backup_content.keys() if "nested" in k and "nested.py" in k), None
-    )
+    actual_key = next((k for k in backup_content if "nested" in k and "nested.py" in k), None)
     assert (
         actual_key is not None
     ), f"Should use relative path, got keys: {list(backup_content.keys())}"

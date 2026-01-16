@@ -4,6 +4,7 @@
 
 import argparse
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -11,6 +12,7 @@ from typing import Optional
 from .annotate_headers import walk_directory
 from .backup import revert_files, save_backup
 from .config import load_config
+from .git_integration import get_git_root, is_git_repository
 
 
 class AnnotationError(Exception):
@@ -50,6 +52,26 @@ def parse_args(args=None) -> argparse.Namespace:
         action="store_true",
         help="Revert files to their state before the last pyannotate run",
     )
+    parser.add_argument(
+        "--git",
+        action="store_true",
+        help="Process only files tracked by git",
+    )
+    parser.add_argument(
+        "--staged",
+        action="store_true",
+        help="Process only files staged for commit",
+    )
+    parser.add_argument(
+        "--use-git-metadata",
+        action="store_true",
+        help="Use git metadata (author, email, dates) for headers",
+    )
+    parser.add_argument(
+        "--install-hook",
+        action="store_true",
+        help="Install pre-commit hook to annotate staged files",
+    )
     return parser.parse_args(args)
 
 
@@ -76,13 +98,63 @@ def _handle_revert(project_root: Path, dry_run: bool) -> int:
     return 0
 
 
-def _handle_annotation(project_root: Path, dry_run: bool, config) -> int:
+def _install_pre_commit_hook(project_root: Path) -> int:
+    """Install pre-commit hook to annotate staged files."""
+    if not is_git_repository(project_root):
+        logging.error("Not a git repository. Cannot install pre-commit hook.")
+        return 1
+
+    git_root = get_git_root(project_root)
+    if not git_root:
+        logging.error("Could not determine git root directory")
+        return 1
+
+    hooks_dir = git_root / ".git" / "hooks"
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+
+    hook_path = hooks_dir / "pre-commit"
+    hook_content = """#!/bin/sh
+# Pre-commit hook installed by pyannotate
+# Annotates staged files with headers
+
+pyannotate --staged --use-git-metadata
+"""
+    try:
+        hook_path.write_text(hook_content, encoding="utf-8")
+        # Make executable on Unix-like systems
+        os.chmod(hook_path, 0o755)
+        logging.info("Pre-commit hook installed at %s", hook_path)
+        logging.info("Staged files will be automatically annotated on commit")
+        return 0
+    except OSError as e:
+        logging.error("Failed to install pre-commit hook: %s", e)
+        return 1
+
+
+def _handle_annotation(
+    project_root: Path, dry_run: bool, config, git_mode: Optional[str], use_git_metadata: bool
+) -> int:
     """Handle normal annotation mode."""
     if dry_run:
         logging.info("DRY-RUN MODE: No files will be modified")
         logging.info("Starting file annotation preview from: %s", project_root)
     else:
         logging.info("Starting file annotation from: %s", project_root)
+
+    if git_mode:
+        if not is_git_repository(project_root):
+            logging.error("Not a git repository. Cannot use --git or --staged flags.")
+            return 1
+        if git_mode == "tracked":
+            logging.info("Processing only git-tracked files")
+        elif git_mode == "staged":
+            logging.info("Processing only staged files")
+
+    if use_git_metadata:
+        if not is_git_repository(project_root):
+            logging.warning("Not a git repository. Git metadata will not be available.")
+        else:
+            logging.info("Using git metadata for headers")
 
     backup_content: dict = {}
     stats = walk_directory(
@@ -91,6 +163,8 @@ def _handle_annotation(project_root: Path, dry_run: bool, config) -> int:
         dry_run=dry_run,
         config=config,
         backup_content=backup_content,
+        git_mode=git_mode,
+        use_git_metadata=use_git_metadata,
     )
 
     if not dry_run and backup_content:
@@ -128,10 +202,22 @@ def main(directory: Optional[Path] = None) -> int:
 
         config = load_config(project_root)
 
+        if args.install_hook:
+            return _install_pre_commit_hook(project_root)
+
         if args.revert:
             return _handle_revert(project_root, args.dry_run)
 
-        return _handle_annotation(project_root, args.dry_run, config)
+        # Determine git mode
+        git_mode = None
+        if args.staged:
+            git_mode = "staged"
+        elif args.git:
+            git_mode = "tracked"
+
+        return _handle_annotation(
+            project_root, args.dry_run, config, git_mode, args.use_git_metadata
+        )
 
     except (OSError, AnnotationError) as e:
         logging.error("An error occurred: %s", e)

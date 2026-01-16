@@ -1,4 +1,69 @@
 <!-- markdownlint-disable MD025 MD024 -->
+# What's New in Version 0.10.0
+
+## 🌟 Major Features
+
+### 🔀 Git Integration
+
+Comprehensive Git integration for seamless workflow integration:
+
+- **Git-aware file processing**: 
+  - `--git` flag: Process only files tracked by git
+  - `--staged` flag: Process only files staged for commit (perfect for pre-commit hooks)
+  - Automatic `.gitignore` respect (with optional `pathspec` library)
+- **Git metadata extraction**:
+  - `--use-git-metadata` flag: Automatically populate headers with git information
+  - Author name from git config or file history
+  - Email address from git config
+  - Last modified date from git log
+  - Config values take precedence over git metadata
+- **Pre-commit hook support**:
+  - `--install-hook` flag: Installs pre-commit hook to auto-annotate staged files
+  - Hook automatically uses git metadata
+  - Seamless integration with existing git workflows
+- **Graceful fallbacks**: Works correctly even when git is unavailable
+
+**Usage Examples:**
+
+```bash
+# Process only git-tracked files
+pyannotate --git
+
+# Process only staged files
+pyannotate --staged
+
+# Use git metadata in headers
+pyannotate --use-git-metadata
+
+# Combine: process staged files with git metadata
+pyannotate --staged --use-git-metadata
+
+# Install pre-commit hook
+pyannotate --install-hook
+```
+
+**Python API:**
+
+```python
+from pyannotate.annotate_headers import walk_directory
+from pyannotate.git_integration import get_git_metadata
+
+# Process with git filtering
+stats = walk_directory(
+    project_root,
+    project_root,
+    git_mode="tracked",  # or "staged"
+    use_git_metadata=True
+)
+
+# Get git metadata for a file
+metadata = get_git_metadata(file_path, git_root)
+```
+
+**Note:** For full `.gitignore` support, install `pathspec`: `pip install pathspec`
+
+---
+
 # What's New in Version 0.9.1
 
 ## 🌟 Major Features

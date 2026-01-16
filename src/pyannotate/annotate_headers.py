@@ -6,12 +6,21 @@
 import logging
 import os
 import re
+import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 from .config import PyAnnotateConfig
+from .git_integration import (
+    get_git_metadata,
+    get_git_root,
+    get_git_staged_files,
+    get_git_tracked_files,
+    get_gitignore_patterns,
+    is_gitignored,
+)
 
 
 @dataclass
@@ -367,7 +376,10 @@ def _normalize_path(path: str) -> str:
 
 
 def _get_template_variables(
-    file_path: Path, project_root: Path, config: Optional[PyAnnotateConfig] = None
+    file_path: Path,
+    project_root: Path,
+    config: Optional[PyAnnotateConfig] = None,
+    use_git_metadata: bool = False,
 ) -> Dict[str, str]:
     """
     Get all available template variables.
@@ -376,6 +388,7 @@ def _get_template_variables(
         file_path: Path to the file being processed
         project_root: Root directory of the project
         config: Optional configuration object
+        use_git_metadata: If True, try to get metadata from git
 
     Returns:
         Dictionary of variable names to values
@@ -389,21 +402,61 @@ def _get_template_variables(
         "file_dir": _normalize_path(os.path.relpath(file_path.parent, project_root)),
     }
 
-    # Add config-based variables if available
+    # Try to get git metadata if requested
+    git_metadata = {}
+    if use_git_metadata:
+        git_root = get_git_root(project_root)
+        if git_root:
+            try:
+                config_dict = {}
+                if config:
+                    config_dict["date_format"] = config.header.date_format
+                git_metadata = get_git_metadata(file_path, git_root, config_dict)
+            except (OSError, ValueError, subprocess.SubprocessError, AttributeError):
+                logging.debug("Failed to get git metadata for %s", file_path)
+
+    # Add config-based variables (config takes precedence over git)
     if config:
         if config.header.author:
             variables["author"] = config.header.author
+        elif git_metadata.get("author"):
+            author = git_metadata["author"]
+            if author:
+                variables["author"] = author
+
         if config.header.author_email:
             variables["author_email"] = config.header.author_email
+        elif git_metadata.get("email"):
+            email = git_metadata["email"]
+            if email:
+                variables["author_email"] = email
+
         if config.header.version:
             variables["version"] = config.header.version
+
         if config.header.include_date:
-            try:
-                date_str = datetime.now().strftime(config.header.date_format)
-                variables["date"] = date_str
-            except (ValueError, TypeError):
-                # Invalid date format, use default
-                variables["date"] = datetime.now().strftime("%Y-%m-%d")
+            # Prefer git date if available, otherwise use current date
+            git_date = git_metadata.get("date")
+            if git_date:
+                variables["date"] = git_date
+            else:
+                try:
+                    date_str = datetime.now().strftime(config.header.date_format)
+                    variables["date"] = date_str
+                except (ValueError, TypeError):
+                    # Invalid date format, use default
+                    variables["date"] = datetime.now().strftime("%Y-%m-%d")
+    elif use_git_metadata and git_metadata:
+        # No config, but use git metadata if available
+        author = git_metadata.get("author")
+        if author:
+            variables["author"] = author
+        email = git_metadata.get("email")
+        if email:
+            variables["author_email"] = email
+        date = git_metadata.get("date")
+        if date:
+            variables["date"] = date
 
     return variables
 
@@ -466,7 +519,10 @@ def _render_template(
 
 
 def _create_header(
-    file_path: Path, project_root: Path, config: Optional[PyAnnotateConfig] = None
+    file_path: Path,
+    project_root: Path,
+    config: Optional[PyAnnotateConfig] = None,
+    use_git_metadata: bool = False,
 ) -> str:
     """
     Create the header content for a file.
@@ -486,7 +542,7 @@ def _create_header(
     comment_end = comment_style[1] if comment_style else ""
 
     # Get template variables
-    variables = _get_template_variables(file_path, project_root, config)
+    variables = _get_template_variables(file_path, project_root, config, use_git_metadata)
 
     # Use custom template if provided
     if config and config.header.template:
@@ -1133,6 +1189,7 @@ def process_file(
     dry_run: bool = False,
     config: Optional[PyAnnotateConfig] = None,
     backup_content: Optional[Dict[str, str]] = None,
+    use_git_metadata: bool = False,
 ) -> dict:
     """
     Process a single file, adding or updating its header.
@@ -1160,7 +1217,7 @@ def process_file(
 
     try:
         content = _read_text_best_effort(file_path)
-        header_block = _create_header(file_path, project_root, config)
+        header_block = _create_header(file_path, project_root, config, use_git_metadata)
         new_content = _determine_new_content(
             file_path, content, comment_start, comment_end, header_block
         )
@@ -1194,6 +1251,8 @@ def walk_directory(
     dry_run: bool = False,
     config: Optional[PyAnnotateConfig] = None,
     backup_content: Optional[Dict[str, str]] = None,
+    git_mode: Optional[str] = None,
+    use_git_metadata: bool = False,
 ) -> dict:
     """
     Walk through directory and process files recursively.
@@ -1205,11 +1264,30 @@ def walk_directory(
         config: Optional configuration object
         backup_content: Optional dictionary to store original content for backup
             (key: relative path)
+        git_mode: Optional git mode: "tracked" (only tracked files) or "staged" (only staged)
+        use_git_metadata: If True, use git metadata for headers
 
     Returns:
         Dictionary with statistics: {"modified": int, "skipped": int, "unchanged": int}
     """
     stats = {"modified": 0, "skipped": 0, "unchanged": 0}
+
+    # Git filtering setup
+    git_files: Optional[Set[Path]] = None
+    gitignore_spec = None
+    git_root = None
+
+    if git_mode:
+        git_root = get_git_root(project_root)
+        if git_root:
+            if git_mode == "tracked":
+                git_files = get_git_tracked_files(git_root, project_root)
+            elif git_mode == "staged":
+                git_files = get_git_staged_files(git_root, project_root)
+            gitignore_spec = get_gitignore_patterns(git_root)
+        else:
+            logging.warning("Git mode requested but not in a git repository")
+            git_mode = None
 
     # Combine default and config-based ignored directories
     ignored_dirs = IGNORED_DIRS.copy()
@@ -1226,17 +1304,37 @@ def walk_directory(
                         dry_run=dry_run,
                         config=config,
                         backup_content=backup_content,
+                        git_mode=git_mode,
+                        use_git_metadata=use_git_metadata,
                     )
                     stats["modified"] += sub_stats["modified"]
                     stats["skipped"] += sub_stats["skipped"]
                     stats["unchanged"] += sub_stats["unchanged"]
             else:
+                # Git filtering
+                if git_mode and git_root:
+                    try:
+                        relative_path = item.relative_to(project_root)
+                        # Check if file is in git set
+                        if git_files is not None and relative_path not in git_files:
+                            stats["skipped"] += 1
+                            continue
+                        # Check if file is gitignored
+                        if is_gitignored(item, git_root, gitignore_spec):
+                            stats["skipped"] += 1
+                            continue
+                    except ValueError:
+                        # File outside project root
+                        stats["skipped"] += 1
+                        continue
+
                 result = process_file(
                     item,
                     project_root,
                     dry_run=dry_run,
                     config=config,
                     backup_content=backup_content,
+                    use_git_metadata=use_git_metadata,
                 )
                 if result["status"] == "modified":
                     stats["modified"] += 1

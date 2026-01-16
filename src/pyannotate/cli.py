@@ -1,4 +1,5 @@
 # File: src/pyannotate/cli.py
+# pylint: disable=duplicate-code
 
 """CLI interface for PyAnnotate."""
 

@@ -1,5 +1,5 @@
 # File: src/pyannotate/annotate_headers.py
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,duplicate-code
 
 """Core functionality for adding and updating file headers."""
 

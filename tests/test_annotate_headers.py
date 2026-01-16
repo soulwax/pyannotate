@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pyannotate.annotate_headers import _get_comment_style, process_file, walk_directory
+from annot8.annotate_headers import _get_comment_style, process_file, walk_directory
 from tests.test_utils import (
     cleanup_test_directory,
     create_temp_test_directory,
@@ -478,7 +478,7 @@ WORKDIR /app
 COPY . .
 RUN pip install -e .
 
-CMD ["python", "-m", "pyannotate"]
+CMD ["python", "-m", "annot8"]
 """
         dockerfile.write_text(dockerfile_content)
         process_file(dockerfile, TEST_DIR)

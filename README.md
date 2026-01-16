@@ -1,4 +1,4 @@
-# PyAnnotate
+# Annot8
 
 📜 **A comprehensive Python tool** for automating the creation and maintenance of file headers across diverse programming languages and frameworks.
 
@@ -25,23 +25,23 @@
 ### 📦 **Install from PyPI** (Recommended)
 
 ```bash
-pip install pyannotate
+pip install annot8
 ```
 
 **Optional dependencies** for enhanced functionality:
 
 ```bash
 # For YAML configuration file support
-pip install pyannotate[yaml]
+pip install annot8[yaml]
 
 # For .gitignore support (pathspec)
-pip install pyannotate[gitignore]
+pip install annot8[gitignore]
 
 # For TOML support on Python < 3.11
-pip install pyannotate[toml]
+pip install annot8[toml]
 
 # Install all optional dependencies
-pip install pyannotate[yaml,gitignore,toml]
+pip install annot8[yaml,gitignore,toml]
 ```
 
 ### 🔧 **Install from Source** (Development)
@@ -49,8 +49,8 @@ pip install pyannotate[yaml,gitignore,toml]
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/soulwax/pyannotate.git
-   cd pyannotate
+   git clone https://github.com/soulwax/annot8.git
+   cd annot8
    ```
 
 2. **Install required dependencies:**
@@ -77,23 +77,23 @@ pip install pyannotate[yaml,gitignore,toml]
 
 ### 🖥️ **Command-Line Interface**
 
-After installation, the `pyannotate` command is available:
+After installation, the `annot8` command is available:
 
 ```bash
 # Annotate files in the current directory
-pyannotate
+annot8
 
 # Annotate files in a specific directory
-pyannotate -d /path/to/project
+annot8 -d /path/to/project
 
 # Enable verbose logging
-pyannotate -v
+annot8 -v
 
 # Preview changes without modifying files (dry-run mode)
-pyannotate --dry-run
+annot8 --dry-run
 
 # Combine options
-pyannotate -d /path/to/project --dry-run -v
+annot8 -d /path/to/project --dry-run -v
 ```
 
 ### 🐍 **Python API**
@@ -102,7 +102,7 @@ For use in Python scripts:
 
 ```python
 from pathlib import Path
-from pyannotate import process_file, walk_directory
+from annot8 import process_file, walk_directory
 
 # Process a single file
 process_file(Path("example.py"), Path.cwd())
@@ -111,7 +111,7 @@ process_file(Path("example.py"), Path.cwd())
 walk_directory(Path.cwd(), Path.cwd())
 
 # Use dry-run mode to preview changes
-from pyannotate.annotate_headers import process_file, walk_directory
+from annot8.annotate_headers import process_file, walk_directory
 
 # Preview changes for a single file
 result = process_file(Path("example.py"), Path.cwd(), dry_run=True)
@@ -131,7 +131,7 @@ read_file
 
 ## 📁 Comprehensive File Support
 
-PyAnnotate automatically recognizes a vast array of file types and applies appropriate comment styles:
+Annot8 automatically recognizes a vast array of file types and applies appropriate comment styles:
 
 ### 🐍 **Programming Languages**
 
@@ -232,7 +232,7 @@ PyAnnotate automatically recognizes a vast array of file types and applies appro
 
 ### 📋 **Special Configuration Files**
 
-PyAnnotate intelligently handles configuration files with appropriate comment styles:
+Annot8 intelligently handles configuration files with appropriate comment styles:
 
 - **Git**: `.gitignore`, `.gitattributes`, `.gitmodules`
 - **Docker**: `Dockerfile`, `docker-compose.yml`
@@ -248,7 +248,7 @@ PyAnnotate intelligently handles configuration files with appropriate comment st
 
 ### 🔒 **Completely Ignored Files**
 
-PyAnnotate automatically skips files that shouldn't be modified:
+Annot8 automatically skips files that shouldn't be modified:
 
 #### Configuration Files
 
@@ -297,7 +297,7 @@ PyAnnotate automatically skips files that shouldn't be modified:
 Preview changes before applying them! Use `--dry-run` to see what would be modified without actually changing any files:
 
 ```bash
-pyannotate --dry-run
+annot8 --dry-run
 ```
 
 **Output includes:**
@@ -348,7 +348,7 @@ This is especially useful for:
 
 ### 🔀 **Git Integration**
 
-Seamlessly integrate PyAnnotate with your Git workflow:
+Seamlessly integrate Annot8 with your Git workflow:
 
 - **Git-aware processing**: Process only tracked or staged files with `--git` and `--staged` flags
 - **Automatic `.gitignore` respect**: Files ignored by git are automatically skipped (requires optional `pathspec` library)
@@ -363,19 +363,19 @@ Seamlessly integrate PyAnnotate with your Git workflow:
 
 ```bash
 # Process only git-tracked files
-pyannotate --git
+annot8 --git
 
 # Process only staged files (perfect for pre-commit)
-pyannotate --staged
+annot8 --staged
 
 # Use git metadata in headers
-pyannotate --use-git-metadata
+annot8 --use-git-metadata
 
 # Combine: process staged files with git metadata
-pyannotate --staged --use-git-metadata
+annot8 --staged --use-git-metadata
 
 # Install pre-commit hook (auto-annotates on commit)
-pyannotate --install-hook
+annot8 --install-hook
 ```
 
 **Note:** For full `.gitignore` support, install `pathspec`: `pip install pathspec`
@@ -386,16 +386,16 @@ pyannotate --install-hook
 
 ### 📋 **Configuration Files**
 
-PyAnnotate supports project-specific configuration via configuration files. Place one of these files in your project root:
+Annot8 supports project-specific configuration via configuration files. Place one of these files in your project root:
 
-- **`.pyannotate.yaml`** or **`.pyannotate.yml`** (YAML format)
-- **`.pyannotate.json`** (JSON format)
-- **`pyproject.toml`** (with `[tool.pyannotate]` section)
+- **`.annot8.yaml`** or **`.annot8.yml`** (YAML format)
+- **`.annot8.json`** (JSON format)
+- **`pyproject.toml`** (with `[tool.annot8]` section)
 
 #### Configuration File Example (YAML)
 
 ```yaml
-# .pyannotate.yaml
+# .annot8.yaml
 header:
   author: "Your Name"
   author_email: "your.email@example.com"
@@ -433,15 +433,15 @@ files:
 #### Configuration File Example (TOML in pyproject.toml)
 
 ```toml
-[tool.pyannotate]
-[tool.pyannotate.header]
+[tool.annot8]
+[tool.annot8.header]
 author = "Your Name"
 author_email = "your.email@example.com"
 version = "1.0.0"
 include_date = true
 date_format = "%Y-%m-%d"
 
-[tool.pyannotate.files]
+[tool.annot8.files]
 ignored_files = ["custom_config.json"]
 ignored_directories = ["local_data"]
 ```
@@ -469,7 +469,7 @@ For TOML support on Python < 3.11, install `tomli`: `pip install tomli`
 ### 🛠️ **Programmatic Configuration**
 
 ```python
-from pyannotate import PATTERNS, FilePattern
+from annot8 import PATTERNS, FilePattern
 
 # Add custom file types
 PATTERNS.append(FilePattern([".custom"], "//", ""))
@@ -481,7 +481,7 @@ PATTERNS.append(FilePattern([".special"], "/*", "*/"))
 ### 🚫 **Customizing Ignored Items**
 
 ```python
-from pyannotate import IGNORED_DIRS, IGNORED_FILES, SPECIAL_FILE_COMMENTS
+from annot8 import IGNORED_DIRS, IGNORED_FILES, SPECIAL_FILE_COMMENTS
 
 # Extend ignored directories
 IGNORED_DIRS.add("my_custom_build_dir")
@@ -497,7 +497,7 @@ SPECIAL_FILE_COMMENTS["my-config"] = ("#", "")
 
 ```python
 # Access all available constants
-from pyannotate import (
+from annot8 import (
     PATTERNS,           # File extension patterns and comment styles
     IGNORED_DIRS,       # Directories to skip during traversal
     IGNORED_FILES,      # Files to completely ignore
@@ -534,15 +534,15 @@ from pyannotate import (
 
 ## 🤝 **Contributing**
 
-**Contributions to PyAnnotate are welcome!** Please open a Pull Request for any improvements.
+**Contributions to Annot8 are welcome!** Please open a Pull Request for any improvements.
 
 ### 🚀 **Development Setup**
 
 1. **Fork and clone the repository:**
 
    ```bash
-   git clone https://github.com/soulwax/pyannotate.git
-   cd pyannotate
+   git clone https://github.com/soulwax/annot8.git
+   cd annot8
    ```
 
 2. **Create a virtual environment:**
@@ -565,10 +565,10 @@ from pyannotate import (
 
    ```bash
    # Run all tests with coverage
-   pytest --cov=pyannotate tests/
+   pytest --cov=annot8 tests/
    
    # Run linting
-   pylint src/pyannotate tests
+   pylint src/annot8 tests
    
    # Format code
    black .
@@ -629,7 +629,7 @@ This project is licensed under the **GNU General Public License v3.0**. See the 
 
 ## 🙏 **Acknowledgments**
 
-PyAnnotate supports the development workflows of programmers across dozens of languages and frameworks. Special recognition for comprehensive support of:
+Annot8 supports the development workflows of programmers across dozens of languages and frameworks. Special recognition for comprehensive support of:
 
 - **Web Development**: Vue.js, Svelte, Astro, React ecosystems
 - **Systems Programming**: Rust, Go, Zig, and C/C++ development
@@ -639,4 +639,4 @@ PyAnnotate supports the development workflows of programmers across dozens of la
 
 ---
 
-*Streamline your project's header management with PyAnnotate - because consistent code documentation shouldn't be a manual chore.*
+*Streamline your project's header management with Annot8 - because consistent code documentation shouldn't be a manual chore.*

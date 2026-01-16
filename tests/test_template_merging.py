@@ -6,8 +6,8 @@ import json
 import tempfile
 from pathlib import Path
 
-from pyannotate.annotate_headers import process_file
-from pyannotate.config import load_config
+from annot8.annotate_headers import process_file
+from annot8.config import load_config
 
 
 class TestTemplateMerging:
@@ -17,7 +17,7 @@ class TestTemplateMerging:
         """Test that multi-line templates are not truncated when file has existing header."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {
                     "template": (
@@ -66,7 +66,7 @@ class TestTemplateMerging:
         """Test multi-line template with metadata from existing header."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {
                     "template": (

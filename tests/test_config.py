@@ -7,10 +7,10 @@ import json
 import tempfile
 from pathlib import Path
 
-from pyannotate.config import (
+from annot8.config import (
     HeaderConfig,
     FileConfig,
-    PyAnnotateConfig,
+    Annot8Config,
     load_config,
     _find_config_file,
     _load_json_config,
@@ -23,7 +23,7 @@ class TestConfigDataClasses:
 
     def test_default_config(self):
         """Test default configuration creation."""
-        config = PyAnnotateConfig.default()
+        config = Annot8Config.default()
         assert isinstance(config.header, HeaderConfig)
         assert isinstance(config.files, FileConfig)
         assert config.header.author is None
@@ -61,7 +61,7 @@ class TestConfigFileLoading:
         """Test finding YAML config file."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.yaml"
+            config_file = temp_path / ".annot8.yaml"
             config_file.write_text("header:\n  author: Test\n")
 
             found = _find_config_file(temp_path)
@@ -71,7 +71,7 @@ class TestConfigFileLoading:
         """Test finding JSON config file."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_file.write_text('{"header": {"author": "Test"}}')
 
             found = _find_config_file(temp_path)
@@ -88,7 +88,7 @@ class TestConfigFileLoading:
         """Test loading JSON configuration."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {
                     "author": "Test Author",
@@ -134,7 +134,7 @@ class TestConfigFileLoading:
         """Test loading configuration from file."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {"author": "Test Author"},
                 "files": {"ignored_files": ["test.ignore"]},
@@ -158,7 +158,7 @@ class TestConfigFileLoading:
         """Test loading configuration from empty file."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_file.write_text("{}")
 
             config = load_config(temp_path)
@@ -169,7 +169,7 @@ class TestConfigFileLoading:
         """Test loading configuration with partial data."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_file.write_text('{"header": {"author": "Test"}}')
 
             config = load_config(temp_path)

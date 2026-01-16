@@ -8,8 +8,8 @@ import re
 import tempfile
 from pathlib import Path
 
-from pyannotate.annotate_headers import process_file
-from pyannotate.config import load_config
+from annot8.annotate_headers import process_file
+from annot8.config import load_config
 
 
 class TestTemplateRendering:
@@ -19,7 +19,7 @@ class TestTemplateRendering:
         """Test simple template with file_path variable."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {"header": {"template": "File: {file_path}"}}
             config_file.write_text(json.dumps(config_data))
 
@@ -36,7 +36,7 @@ class TestTemplateRendering:
         """Test multi-line template."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {"template": "File: {file_path}\nAuthor: {author|Unknown}\nDate: {date}"}
             }
@@ -58,7 +58,7 @@ class TestTemplateRendering:
         """Test template with author variable."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {"author": "John Doe", "template": "File: {file_path}\nAuthor: {author}"}
             }
@@ -78,7 +78,7 @@ class TestTemplateRendering:
         """Test template with default values for missing variables."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {
                     "template": (
@@ -103,7 +103,7 @@ class TestTemplateRendering:
         """Test template with date variable."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {
                     "include_date": True,
@@ -132,7 +132,7 @@ class TestTemplateRendering:
             sub_dir = temp_path / "src" / "utils"
             sub_dir.mkdir(parents=True)
 
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {
                     "template": (
@@ -160,7 +160,7 @@ class TestTemplateRendering:
         """Test template with empty lines for spacing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {
                 "header": {"template": "File: {file_path}\n\nDescription: This is a test file"}
             }
@@ -183,7 +183,7 @@ class TestTemplateRendering:
         """Test template with CSS-style comments."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {"header": {"template": "File: {file_path}\nAuthor: {author|Unknown}"}}
             config_file.write_text(json.dumps(config_data))
 

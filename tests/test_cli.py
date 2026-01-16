@@ -7,7 +7,7 @@ from unittest.mock import patch
 import logging
 from pathlib import Path
 import tempfile
-from pyannotate.cli import main, setup_logging, parse_args
+from annot8.cli import main, setup_logging, parse_args
 
 
 def test_setup_logging(caplog):
@@ -41,7 +41,7 @@ def test_parse_args_dry_run():
 
 def test_main_directory_not_found():
     """Test main function with non-existent directory."""
-    with patch("pyannotate.cli.parse_args") as mock_parse_args:
+    with patch("annot8.cli.parse_args") as mock_parse_args:
         mock_parse_args.return_value = argparse.Namespace(
             directory=Path("nonexistent"),
             verbose=False,
@@ -62,7 +62,7 @@ def test_main_successful_run():
         test_file = Path(temp_path) / "test.py"
         test_file.write_text("print('hello')")
 
-        with patch("pyannotate.cli.parse_args") as mock_parse_args:
+        with patch("annot8.cli.parse_args") as mock_parse_args:
             mock_parse_args.return_value = argparse.Namespace(
                 directory=Path(temp_path),
                 verbose=False,
@@ -87,7 +87,7 @@ def test_main_dry_run():
         original_content = "print('hello')"
         test_file.write_text(original_content)
 
-        with patch("pyannotate.cli.parse_args") as mock_parse_args:
+        with patch("annot8.cli.parse_args") as mock_parse_args:
             mock_parse_args.return_value = argparse.Namespace(
                 directory=Path(temp_path),
                 verbose=False,

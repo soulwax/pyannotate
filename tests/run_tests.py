@@ -1,7 +1,7 @@
 # File: tests/run_tests.py
 
 """
-Automated test script for PyAnnotate.
+Automated test script for Annot8.
 Runs code formatting, linting, and tests in one command.
 """
 
@@ -65,7 +65,7 @@ def run_tests():
     """Run pytest with coverage."""
     print("\n=== Running Tests (pytest) ===")
     pytest_out = "pytest.txt"
-    result = run_command(["pytest", "--cov=pyannotate", "tests/"], pytest_out)
+    result = run_command(["pytest", "--cov=annot8", "tests/"], pytest_out)
 
     if result.returncode != 0:
         print("Tests failed!")
@@ -86,7 +86,7 @@ def run_tests():
 
 def main():
     """Main entry point."""
-    print("=== PyAnnotate Automated Testing ===")
+    print("=== Annot8 Automated Testing ===")
 
     # Ensure we're in the project root
     project_root = Path(__file__).parent

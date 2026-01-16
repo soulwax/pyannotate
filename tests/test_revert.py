@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from pyannotate.annotate_headers import process_file, walk_directory
-from pyannotate.backup import (
+from annot8.annotate_headers import process_file, walk_directory
+from annot8.backup import (
     BACKUP_FILENAME,
     clear_backup,
     load_backup,

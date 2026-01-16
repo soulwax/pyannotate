@@ -6,7 +6,7 @@
 import shutil
 from pathlib import Path
 
-from pyannotate.annotate_headers import process_file
+from annot8.annotate_headers import process_file
 
 
 def create_temp_test_directory(test_dir: Path) -> None:

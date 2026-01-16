@@ -119,10 +119,10 @@ export default Counter;
   <main>
     <section>
       <h2>Main Content</h2>
-      <p>This is a sample HTML page for testing the PyAnnotate tool.</p>
+      <p>This is a sample HTML page for testing the Annot8 tool.</p>
     </section>
   </main>
-  <footer><p>&copy; 2025 PyAnnotate Example</p></footer>
+  <footer><p>&copy; 2025 Annot8 Example</p></footer>
   <script src="main.js"></script>
 </body>
 </html>

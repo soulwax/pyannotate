@@ -6,9 +6,9 @@ format:
 	black .
 
 lint:
-	pylint src/pyannotate tests > pylint.txt
+	pylint src/annot8 tests > pylint.txt
 
 test:
-	pytest --cov=pyannotate tests/ > pytest.txt
+	pytest --cov=annot8 tests/ > pytest.txt
 
 check: format lint test

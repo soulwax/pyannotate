@@ -1,6 +1,6 @@
-# File: src/pyannotate/__init__.py
+# File: src/annot8/__init__.py
 
-"""pyannotate package init.
+"""annot8 package init.
 This package provides functionality to automatically add or update file headers
 in various programming language files.
 """
@@ -29,7 +29,7 @@ def _read_version() -> str:
     if _get_version is None:  # metadata API unavailable
         return "0.0.0"
     try:
-        return _get_version("pyannotate")  # type: ignore[operator]
+        return _get_version("annot8")  # type: ignore[operator]
     except PackageNotFoundError:
         return "0.0.0"
 

@@ -1,6 +1,6 @@
-# File: src/pyannotate/git_integration.py
+# File: src/annot8/git_integration.py
 
-"""Git integration for PyAnnotate."""
+"""Git integration for Annot8."""
 
 import logging
 import subprocess

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pyannotate.annotate_headers import (
+from annot8.annotate_headers import (
     _detect_header_pattern,
     _has_existing_header,
     _merge_headers,

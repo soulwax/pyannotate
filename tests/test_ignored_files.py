@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pyannotate.annotate_headers import (
+from annot8.annotate_headers import (
     IGNORED_FILES,
     SHADER_EXTENSIONS,
     process_file,

@@ -48,7 +48,7 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pytest --cov=pyannotate tests/
+          pytest --cov=annot8 tests/
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v3

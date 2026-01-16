@@ -1,6 +1,6 @@
-# File: src/pyannotate/backup.py
+# File: src/annot8/backup.py
 
-"""Backup and revert functionality for PyAnnotate."""
+"""Backup and revert functionality for Annot8."""
 
 import json
 import logging
@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
-BACKUP_FILENAME = ".pyannotate_backup.json"
+BACKUP_FILENAME = ".annot8_backup.json"
 
 
 def _get_backup_path(project_root: Path) -> Path:

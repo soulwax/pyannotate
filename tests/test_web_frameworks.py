@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pyannotate.annotate_headers import _get_comment_style, process_file
+from annot8.annotate_headers import _get_comment_style, process_file
 from tests.test_utils import cleanup_test_directory, create_temp_test_directory
 
 # Directory for temporary test files

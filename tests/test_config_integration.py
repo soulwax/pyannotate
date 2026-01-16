@@ -6,8 +6,8 @@ import json
 import tempfile
 from pathlib import Path
 
-from pyannotate.annotate_headers import process_file, walk_directory
-from pyannotate.config import load_config
+from annot8.annotate_headers import process_file, walk_directory
+from annot8.config import load_config
 
 
 class TestConfigIntegration:
@@ -19,7 +19,7 @@ class TestConfigIntegration:
             temp_path = Path(temp_dir)
 
             # Create config file
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {"files": {"ignored_files": ["custom_ignore.txt"]}}
             config_file.write_text(json.dumps(config_data))
 
@@ -51,7 +51,7 @@ class TestConfigIntegration:
             temp_path = Path(temp_dir)
 
             # Create config file
-            config_file = temp_path / ".pyannotate.json"
+            config_file = temp_path / ".annot8.json"
             config_data = {"files": {"ignored_directories": ["skip_me"]}}
             config_file.write_text(json.dumps(config_data))
 

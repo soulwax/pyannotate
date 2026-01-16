@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from pyannotate.git_integration import (
+from annot8.git_integration import (
     get_git_author,
     get_git_email,
     get_git_file_author,

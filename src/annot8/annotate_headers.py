@@ -1,4 +1,4 @@
-# File: src/pyannotate/annotate_headers.py
+# File: src/annot8/annotate_headers.py
 # pylint: disable=too-many-lines,duplicate-code
 
 """Core functionality for adding and updating file headers."""
@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from .config import PyAnnotateConfig
+from .config import Annot8Config
 from .git_integration import (
     get_git_metadata,
     get_git_root,
@@ -378,7 +378,7 @@ def _normalize_path(path: str) -> str:
 def _get_template_variables(
     file_path: Path,
     project_root: Path,
-    config: Optional[PyAnnotateConfig] = None,
+    config: Optional[Annot8Config] = None,
     use_git_metadata: bool = False,
 ) -> Dict[str, str]:
     """
@@ -521,7 +521,7 @@ def _render_template(
 def _create_header(
     file_path: Path,
     project_root: Path,
-    config: Optional[PyAnnotateConfig] = None,
+    config: Optional[Annot8Config] = None,
     use_git_metadata: bool = False,
 ) -> str:
     """
@@ -1046,7 +1046,7 @@ def _collect_metadata_lines(lines: List[str], comment_start: str) -> List[str]:
     return metadata_lines
 
 
-def _should_skip_path(file_path: Path, config: Optional[PyAnnotateConfig] = None) -> bool:
+def _should_skip_path(file_path: Path, config: Optional[Annot8Config] = None) -> bool:
     """Centralize skip logic to reduce statements in process_file."""
     if not file_path.is_file():
         logging.warning("File not found: %s", file_path)
@@ -1187,7 +1187,7 @@ def process_file(
     file_path: Path,
     project_root: Path,
     dry_run: bool = False,
-    config: Optional[PyAnnotateConfig] = None,
+    config: Optional[Annot8Config] = None,
     backup_content: Optional[Dict[str, str]] = None,
     use_git_metadata: bool = False,
 ) -> dict:
@@ -1249,7 +1249,7 @@ def walk_directory(
     directory: Path,
     project_root: Path,
     dry_run: bool = False,
-    config: Optional[PyAnnotateConfig] = None,
+    config: Optional[Annot8Config] = None,
     backup_content: Optional[Dict[str, str]] = None,
     git_mode: Optional[str] = None,
     use_git_metadata: bool = False,

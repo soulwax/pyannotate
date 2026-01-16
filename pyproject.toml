@@ -5,7 +5,7 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyannotate"
+name = "annot8"
 version = "0.11.0"
 description = "Python package to annotate files with headers."
 authors = [
@@ -32,12 +32,12 @@ classifiers = [
 keywords = ["file", "header", "annotation", "comment", "automation"]
 
 [project.urls]
-Homepage = "https://github.com/soulwax/pyannotate"
-Repository = "https://github.com/soulwax/pyannotate"
-Issues = "https://github.com/soulwax/pyannotate/issues"
+Homepage = "https://github.com/soulwax/annot8"
+Repository = "https://github.com/soulwax/annot8"
+Issues = "https://github.com/soulwax/annot8/issues"
 
 [project.scripts]
-pyannotate = "pyannotate.cli:main"
+annot8 = "annot8.cli:main"
 
 [project.optional-dependencies]
 yaml = ["pyyaml>=6.0"]
@@ -45,7 +45,7 @@ gitignore = ["pathspec>=0.10.3"]
 toml = ["tomli>=2.0.0; python_version<'3.11'"]
 
 [tool.setuptools_scm]
-write_to = "src/pyannotate/_version.py"
+write_to = "src/annot8/_version.py"
 
 [tool.black]
 line-length = 100
@@ -89,5 +89,5 @@ good-names = ["i", "j", "k", "ex", "Run", "_", "fp", "id"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "--cov=pyannotate"
+addopts = "--cov=annot8"
 pythonpath = [".", "src"]

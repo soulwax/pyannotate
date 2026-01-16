@@ -1,6 +1,6 @@
-# File: src/pyannotate/config.py
+# File: src/annot8/config.py
 
-"""Configuration file loading and management for PyAnnotate."""
+"""Configuration file loading and management for Annot8."""
 
 import json
 import logging
@@ -50,14 +50,14 @@ class FileConfig:
 
 
 @dataclass
-class PyAnnotateConfig:
-    """Main configuration class for PyAnnotate."""
+class Annot8Config:
+    """Main configuration class for Annot8."""
 
     header: HeaderConfig = field(default_factory=HeaderConfig)
     files: FileConfig = field(default_factory=FileConfig)
 
     @classmethod
-    def default(cls) -> "PyAnnotateConfig":
+    def default(cls) -> "Annot8Config":
         """Create a default configuration."""
         return cls()
 
@@ -67,10 +67,10 @@ def _find_config_file(directory: Path) -> Optional[Path]:
     Find configuration file in the given directory or parent directories.
 
     Looks for:
-    - .pyannotate.yaml
-    - .pyannotate.yml
-    - .pyannotate.json
-    - pyproject.toml (with [tool.pyannotate] section)
+    - .annot8.yaml
+    - .annot8.yml
+    - .annot8.json
+    - pyproject.toml (with [tool.annot8] section)
 
     Args:
         directory: Directory to search from (searches upward)
@@ -83,7 +83,7 @@ def _find_config_file(directory: Path) -> Optional[Path]:
     # Search upward from current directory
     while current != current.parent:
         # Check for dedicated config files
-        for filename in [".pyannotate.yaml", ".pyannotate.yml", ".pyannotate.json"]:
+        for filename in [".annot8.yaml", ".annot8.yml", ".annot8.json"]:
             config_path = current / filename
             if config_path.is_file():
                 return config_path
@@ -137,8 +137,8 @@ def _load_toml_config(config_path: Path) -> Dict[str, Any]:
     try:
         with open(config_path, "rb") as f:
             data = tomllib.load(f)
-            # Extract [tool.pyannotate] section
-            return data.get("tool", {}).get("pyannotate", {})
+            # Extract [tool.annot8] section
+            return data.get("tool", {}).get("annot8", {})
     except OSError as e:
         logging.warning("Failed to load TOML config from %s: %s", config_path, e)
         return {}
@@ -170,9 +170,9 @@ def _load_config_file(config_path: Path) -> Dict[str, Any]:
     return {}
 
 
-def _parse_config_dict(config_data: Dict[str, Any]) -> PyAnnotateConfig:
+def _parse_config_dict(config_data: Dict[str, Any]) -> Annot8Config:
     """
-    Parse configuration dictionary into PyAnnotateConfig object.
+    Parse configuration dictionary into Annot8Config object.
 
     Args:
         config_data: Raw configuration dictionary
@@ -180,7 +180,7 @@ def _parse_config_dict(config_data: Dict[str, Any]) -> PyAnnotateConfig:
     Returns:
         Parsed configuration object
     """
-    config = PyAnnotateConfig()
+    config = Annot8Config()
 
     # Parse header configuration
     if "header" in config_data:
@@ -208,7 +208,7 @@ def _parse_config_dict(config_data: Dict[str, Any]) -> PyAnnotateConfig:
     return config
 
 
-def load_config(project_root: Path) -> PyAnnotateConfig:
+def load_config(project_root: Path) -> Annot8Config:
     """
     Load configuration from file if it exists, otherwise return default config.
 
@@ -216,23 +216,23 @@ def load_config(project_root: Path) -> PyAnnotateConfig:
         project_root: Root directory of the project to search for config
 
     Returns:
-        PyAnnotateConfig object with loaded or default settings
+        Annot8Config object with loaded or default settings
     """
     config_path = _find_config_file(project_root)
 
     if config_path is None:
         logging.debug("No configuration file found, using defaults")
-        return PyAnnotateConfig.default()
+        return Annot8Config.default()
 
     logging.info("Loading configuration from: %s", config_path)
     config_data = _load_config_file(config_path)
 
     if not config_data:
         logging.debug("Configuration file is empty, using defaults")
-        return PyAnnotateConfig.default()
+        return Annot8Config.default()
 
     try:
         return _parse_config_dict(config_data)
     except (ValueError, KeyError, TypeError, AttributeError) as e:
         logging.warning("Error parsing configuration: %s. Using defaults.", e)
-        return PyAnnotateConfig.default()
+        return Annot8Config.default()

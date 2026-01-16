@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pyannotate.annotate_headers import process_file
+from annot8.annotate_headers import process_file
 from tests.helpers.components import WEB_FRAMEWORK_TEMPLATES
 from tests.test_utils import (
     cleanup_test_directory,

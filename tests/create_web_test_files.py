@@ -34,4 +34,4 @@ def create_test_files() -> Path:
 
 if __name__ == "__main__":
     td = create_test_files()
-    print(f"\nTo process these files, run: python -m pyannotate -d {td}")
+    print(f"\nTo process these files, run: python -m annot8 -d {td}")

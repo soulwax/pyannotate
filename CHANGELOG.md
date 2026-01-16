@@ -5,13 +5,13 @@
 
 ### 📦 PyPI Publication Preparation
 
-PyAnnotate is now ready for PyPI distribution! The package has been fully configured for publication:
+Annot8 is now ready for PyPI distribution! The package has been fully configured for publication:
 
 - **Modern packaging**: Complete `pyproject.toml` configuration with PEP 621 compliance
 - **Optional dependencies**: Modular dependency system for enhanced features:
-  - `pyannotate[yaml]` - YAML configuration file support
-  - `pyannotate[gitignore]` - Full `.gitignore` support via `pathspec`
-  - `pyannotate[toml]` - TOML support for Python < 3.11
+  - `annot8[yaml]` - YAML configuration file support
+  - `annot8[gitignore]` - Full `.gitignore` support via `pathspec`
+  - `annot8[toml]` - TOML support for Python < 3.11
 - **Automated publishing**: GitHub Actions workflow for PyPI releases
 - **Distribution-ready**: Proper `MANIFEST.in` configuration excluding tests and examples
 - **Updated documentation**: Installation instructions for PyPI and source
@@ -20,10 +20,10 @@ PyAnnotate is now ready for PyPI distribution! The package has been fully config
 
 ```bash
 # Basic installation
-pip install pyannotate
+pip install annot8
 
 # With optional dependencies
-pip install pyannotate[yaml,gitignore,toml]
+pip install annot8[yaml,gitignore,toml]
 ```
 
 **Publishing:**
@@ -63,26 +63,26 @@ Comprehensive Git integration for seamless workflow integration:
 
 ```bash
 # Process only git-tracked files
-pyannotate --git
+annot8 --git
 
 # Process only staged files
-pyannotate --staged
+annot8 --staged
 
 # Use git metadata in headers
-pyannotate --use-git-metadata
+annot8 --use-git-metadata
 
 # Combine: process staged files with git metadata
-pyannotate --staged --use-git-metadata
+annot8 --staged --use-git-metadata
 
 # Install pre-commit hook
-pyannotate --install-hook
+annot8 --install-hook
 ```
 
 **Python API:**
 
 ```python
-from pyannotate.annotate_headers import walk_directory
-from pyannotate.git_integration import get_git_metadata
+from annot8.annotate_headers import walk_directory
+from annot8.git_integration import get_git_metadata
 
 # Process with git filtering
 stats = walk_directory(
@@ -106,12 +106,12 @@ metadata = get_git_metadata(file_path, git_root)
 
 ### 🔄 Revert Functionality
 
-Added comprehensive revert functionality to undo changes made by PyAnnotate:
+Added comprehensive revert functionality to undo changes made by Annot8:
 
 - **Automatic backup creation**: Backups are automatically created when files are modified
-- **Manual revert**: Use `pyannotate --revert` to restore files to their state before the last run
-- **Dry-run revert**: Preview revert operations with `pyannotate --revert --dry-run`
-- **Backup file**: Backups are stored in `.pyannotate_backup.json` in the project root
+- **Manual revert**: Use `annot8 --revert` to restore files to their state before the last run
+- **Dry-run revert**: Preview revert operations with `annot8 --revert --dry-run`
+- **Backup file**: Backups are stored in `.annot8_backup.json` in the project root
 - **Relative paths**: Backups use relative paths for portability across systems
 - **Error handling**: Gracefully handles missing files, permission errors, and other edge cases
 
@@ -119,19 +119,19 @@ Added comprehensive revert functionality to undo changes made by PyAnnotate:
 
 ```bash
 # Normal annotation (creates backup automatically)
-pyannotate
+annot8
 
 # Revert last changes
-pyannotate --revert
+annot8 --revert
 
 # Preview revert without applying
-pyannotate --revert --dry-run
+annot8 --revert --dry-run
 ```
 
 **Python API:**
 
 ```python
-from pyannotate.backup import revert_files
+from annot8.backup import revert_files
 stats = revert_files(project_root, dry_run=False)
 ```
 
@@ -242,14 +242,14 @@ header:
 
 ### 📋 Configuration File Support
 
-- **Multiple format support**: YAML (`.pyannotate.yaml`), JSON (`.pyannotate.json`), and TOML (`pyproject.toml`)
+- **Multiple format support**: YAML (`.annot8.yaml`), JSON (`.annot8.json`), and TOML (`pyproject.toml`)
 - **Project-specific settings**: Configure header metadata, ignored files/directories per project
 - **Automatic discovery**: Config files are automatically found by walking up the directory tree
 - **Backward compatible**: Works without config files (uses sensible defaults)
 - **Header configuration**: Set author, email, version, date format (ready for future metadata features)
 - **File filtering**: Extend ignored files and directories via configuration
 
-**Example `.pyannotate.yaml`:**
+**Example `.annot8.yaml`:**
 
 ```yaml
 header:
@@ -273,13 +273,13 @@ files:
 **Usage:**
 
 ```bash
-pyannotate --dry-run
+annot8 --dry-run
 ```
 
 **Python API:**
 
 ```python
-from pyannotate.annotate_headers import walk_directory
+from annot8.annotate_headers import walk_directory
 stats = walk_directory(Path.cwd(), Path.cwd(), dry_run=True)
 ```
 
@@ -311,14 +311,14 @@ header:
 
 ### 📋 Configuration File Support
 
-- **Multiple format support**: YAML (`.pyannotate.yaml`), JSON (`.pyannotate.json`), and TOML (`pyproject.toml`)
+- **Multiple format support**: YAML (`.annot8.yaml`), JSON (`.annot8.json`), and TOML (`pyproject.toml`)
 - **Project-specific settings**: Configure header metadata, ignored files/directories per project
 - **Automatic discovery**: Config files are automatically found by walking up the directory tree
 - **Backward compatible**: Works without config files (uses sensible defaults)
 - **Header configuration**: Set author, email, version, date format (ready for future metadata features)
 - **File filtering**: Extend ignored files and directories via configuration
 
-**Example `.pyannotate.yaml`:**
+**Example `.annot8.yaml`:**
 
 ```yaml
 header:
@@ -342,13 +342,13 @@ files:
 **Usage:**
 
 ```bash
-pyannotate --dry-run
+annot8 --dry-run
 ```
 
 **Python API:**
 
 ```python
-from pyannotate.annotate_headers import walk_directory
+from annot8.annotate_headers import walk_directory
 stats = walk_directory(Path.cwd(), Path.cwd(), dry_run=True)
 ```
 

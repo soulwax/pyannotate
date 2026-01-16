@@ -1,7 +1,7 @@
-# File: src/pyannotate/cli.py
+# File: src/annot8/cli.py
 # pylint: disable=duplicate-code
 
-"""CLI interface for PyAnnotate."""
+"""CLI interface for Annot8."""
 
 import argparse
 import logging
@@ -51,7 +51,7 @@ def parse_args(args=None) -> argparse.Namespace:
     parser.add_argument(
         "--revert",
         action="store_true",
-        help="Revert files to their state before the last pyannotate run",
+        help="Revert files to their state before the last annot8 run",
     )
     parser.add_argument(
         "--git",
@@ -81,7 +81,7 @@ def _handle_revert(project_root: Path, dry_run: bool) -> int:
     if dry_run:
         logging.info("DRY-RUN MODE: Previewing revert operation")
     else:
-        logging.info("Reverting files to state before last pyannotate run")
+        logging.info("Reverting files to state before last annot8 run")
     stats = revert_files(project_root, dry_run=dry_run)
     if dry_run:
         logging.info("=" * 60)
@@ -115,10 +115,10 @@ def _install_pre_commit_hook(project_root: Path) -> int:
 
     hook_path = hooks_dir / "pre-commit"
     hook_content = """#!/bin/sh
-# Pre-commit hook installed by pyannotate
+# Pre-commit hook installed by annot8
 # Annotates staged files with headers
 
-pyannotate --staged --use-git-metadata
+annot8 --staged --use-git-metadata
 """
     try:
         hook_path.write_text(hook_content, encoding="utf-8")

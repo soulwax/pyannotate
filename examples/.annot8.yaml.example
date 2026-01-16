@@ -1,5 +1,5 @@
-# PyAnnotate Configuration File Example
-# Copy this file to .pyannotate.yaml in your project root
+# Annot8 Configuration File Example
+# Copy this file to .annot8.yaml in your project root
 
 # Header configuration
 header:

@@ -1,6 +1,6 @@
-# Publishing Guide for PyAnnotate
+# Publishing Guide for Annot8
 
-This guide explains how to publish PyAnnotate to PyPI.
+This guide explains how to publish Annot8 to PyPI.
 
 ## Prerequisites
 
@@ -72,7 +72,7 @@ This guide explains how to publish PyAnnotate to PyPI.
 
 5. **Test installation from TestPyPI**:
    ```bash
-   pip install --index-url https://test.pypi.org/simple/ pyannotate
+   pip install --index-url https://test.pypi.org/simple/ annot8
    ```
 
 6. **Upload to PyPI** (when ready):
@@ -97,7 +97,7 @@ The package supports optional dependencies via extras:
 
 Users can install with:
 ```bash
-pip install pyannotate[yaml,gitignore,toml]
+pip install annot8[yaml,gitignore,toml]
 ```
 
 ## Troubleshooting
@@ -121,8 +121,8 @@ pip install pyannotate[yaml,gitignore,toml]
 
 1. **Verify installation**:
    ```bash
-   pip install pyannotate
-   pyannotate --help
+   pip install annot8
+   annot8 --help
    ```
 
 2. **Update README** if needed (installation instructions should already be updated)

@@ -195,6 +195,20 @@ IGNORED_FILES: Set[str] = {
     ".idea/modules.xml",
 }
 
+# Define shader file extensions to skip (require #version directive at top)
+SHADER_EXTENSIONS = {
+    ".vert",  # Vertex shader
+    ".frag",  # Fragment shader
+    ".geom",  # Geometry shader
+    ".comp",  # Compute shader
+    ".tesc",  # Tessellation control shader
+    ".tese",  # Tessellation evaluation shader
+    ".glsl",  # Generic GLSL shader
+    ".hlsl",  # HLSL shader (DirectX)
+    ".wgsl",  # WebGPU shader
+    ".shader",  # Generic shader file
+}
+
 # Define binary file extensions to skip
 BINARY_EXTENSIONS = {
     # Executables and libraries
@@ -987,6 +1001,11 @@ def _should_skip_path(file_path: Path, config: Optional[PyAnnotateConfig] = None
         logging.debug("Skipping documentation file: %s", file_path)
         return True
 
+    # Check shader files (require #version directive at top)
+    if file_path.suffix.lower() in SHADER_EXTENSIONS:
+        logging.debug("Skipping shader file (requires #version at top): %s", file_path)
+        return True
+
     # Check default ignored files
     if file_path.name in IGNORED_FILES:
         logging.debug("Skipping ignored file: %s", file_path)
@@ -1113,6 +1132,7 @@ def process_file(
     project_root: Path,
     dry_run: bool = False,
     config: Optional[PyAnnotateConfig] = None,
+    backup_content: Optional[Dict[str, str]] = None,
 ) -> dict:
     """
     Process a single file, adding or updating its header.
@@ -1122,6 +1142,8 @@ def process_file(
         project_root: Root directory of the project
         dry_run: If True, preview changes without modifying files
         config: Optional configuration object
+        backup_content: Optional dictionary to store original content for backup
+            (key: relative path)
 
     Returns:
         Dictionary with status information: {"status": "modified|skipped|unchanged"}
@@ -1144,6 +1166,15 @@ def process_file(
         )
 
         if new_content is not None and new_content != content:
+            # Save original content for backup (only if not dry-run)
+            if backup_content is not None and not dry_run:
+                try:
+                    relative_path = str(file_path.relative_to(project_root))
+                    backup_content[relative_path] = content
+                except ValueError:
+                    # File is outside project root, skip backup
+                    logging.debug("File outside project root, skipping backup: %s", file_path)
+
             if dry_run:
                 logging.info("[DRY-RUN] Would update header in: %s", file_path)
             else:
@@ -1162,6 +1193,7 @@ def walk_directory(
     project_root: Path,
     dry_run: bool = False,
     config: Optional[PyAnnotateConfig] = None,
+    backup_content: Optional[Dict[str, str]] = None,
 ) -> dict:
     """
     Walk through directory and process files recursively.
@@ -1171,6 +1203,8 @@ def walk_directory(
         project_root: Root directory of the project
         dry_run: If True, preview changes without modifying files
         config: Optional configuration object
+        backup_content: Optional dictionary to store original content for backup
+            (key: relative path)
 
     Returns:
         Dictionary with statistics: {"modified": int, "skipped": int, "unchanged": int}
@@ -1186,12 +1220,24 @@ def walk_directory(
         for item in directory.iterdir():
             if item.is_dir():
                 if item.name not in ignored_dirs:
-                    sub_stats = walk_directory(item, project_root, dry_run=dry_run, config=config)
+                    sub_stats = walk_directory(
+                        item,
+                        project_root,
+                        dry_run=dry_run,
+                        config=config,
+                        backup_content=backup_content,
+                    )
                     stats["modified"] += sub_stats["modified"]
                     stats["skipped"] += sub_stats["skipped"]
                     stats["unchanged"] += sub_stats["unchanged"]
             else:
-                result = process_file(item, project_root, dry_run=dry_run, config=config)
+                result = process_file(
+                    item,
+                    project_root,
+                    dry_run=dry_run,
+                    config=config,
+                    backup_content=backup_content,
+                )
                 if result["status"] == "modified":
                     stats["modified"] += 1
                 elif result["status"] == "skipped":

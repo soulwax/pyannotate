@@ -245,6 +245,11 @@ PyAnnotate automatically skips files that shouldn't be modified:
 - **Documentation**: `README.md`, `CHANGELOG.md` (Markdown files)
 - **Standard JSON**: `.json` files (only JSON5 gets headers)
 
+#### Shader Files
+
+- **GLSL/HLSL Shaders**: `.vert`, `.frag`, `.geom`, `.comp`, `.tesc`, `.tese`, `.glsl`, `.hlsl`, `.wgsl`, `.shader`
+- **Reason**: Shader files require `#version` directive at the very top; headers would break compilation
+
 #### Binary Files
 
 - **Images**: `.png`, `.jpg`, `.jpeg`, `.gif`, `.ico`, `.webp`

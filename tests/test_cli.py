@@ -43,7 +43,7 @@ def test_main_directory_not_found():
     """Test main function with non-existent directory."""
     with patch("pyannotate.cli.parse_args") as mock_parse_args:
         mock_parse_args.return_value = argparse.Namespace(
-            directory=Path("nonexistent"), verbose=False, dry_run=False
+            directory=Path("nonexistent"), verbose=False, dry_run=False, revert=False
         )
         exit_code = main()
         assert exit_code == 1
@@ -57,7 +57,7 @@ def test_main_successful_run():
 
         with patch("pyannotate.cli.parse_args") as mock_parse_args:
             mock_parse_args.return_value = argparse.Namespace(
-                directory=Path(temp_path), verbose=False, dry_run=False
+                directory=Path(temp_path), verbose=False, dry_run=False, revert=False
             )
             exit_code = main()
             assert exit_code == 0
@@ -75,7 +75,7 @@ def test_main_dry_run():
 
         with patch("pyannotate.cli.parse_args") as mock_parse_args:
             mock_parse_args.return_value = argparse.Namespace(
-                directory=Path(temp_path), verbose=False, dry_run=True
+                directory=Path(temp_path), verbose=False, dry_run=True, revert=False
             )
             exit_code = main()
             assert exit_code == 0

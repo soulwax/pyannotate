@@ -1,4 +1,5 @@
 # File: tests/test_ignored_files.py
+# pylint: disable=duplicate-code
 
 """Tests for the IGNORED_FILES functionality."""
 
@@ -6,7 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from pyannotate.annotate_headers import IGNORED_FILES, process_file, walk_directory
+from pyannotate.annotate_headers import (
+    IGNORED_FILES,
+    SHADER_EXTENSIONS,
+    process_file,
+    walk_directory,
+)
 from tests.test_utils import cleanup_test_directory, create_temp_test_directory
 
 # Directory for temporary test files
@@ -209,3 +215,64 @@ def test_multiple_ignored_files_in_directory():
     # Verify regular file got processed
     processed_regular = regular_file.read_text()
     assert processed_regular.startswith("# File: app.py"), "Regular Python file should get a header"
+
+
+def test_shader_files_ignored():
+    """Test that shader files are ignored (require #version directive at top)."""
+    shader_extensions = [
+        ".vert",
+        ".frag",
+        ".geom",
+        ".comp",
+        ".tesc",
+        ".tese",
+        ".glsl",
+        ".hlsl",
+        ".wgsl",
+        ".shader",
+    ]
+
+    for ext in shader_extensions:
+        shader_file = TEST_DIR / f"test_shader{ext}"
+        # GLSL shader with #version directive (must be first)
+        original_content = """#version 450 core
+
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoord;
+
+out vec2 fragTexCoord;
+
+void main() {
+    gl_Position = vec4(position, 1.0);
+    fragTexCoord = texCoord;
+}
+"""
+        shader_file.write_text(original_content)
+
+        process_file(shader_file, TEST_DIR)
+
+        processed_content = shader_file.read_text()
+        assert (
+            processed_content == original_content
+        ), f"{ext} shader file was modified but should be ignored (requires #version at top)"
+        assert processed_content.startswith(
+            "#version"
+        ), f"{ext} shader file must start with #version directive"
+
+
+def test_shader_extensions_constant_contains_common_entries():
+    """Check that SHADER_EXTENSIONS contains common shader file extensions."""
+    expected_extensions = {
+        ".vert",
+        ".frag",
+        ".geom",
+        ".comp",
+        ".tesc",
+        ".tese",
+        ".glsl",
+        ".hlsl",
+        ".wgsl",
+        ".shader",
+    }
+    missing = [ext for ext in expected_extensions if ext not in SHADER_EXTENSIONS]
+    assert not missing, f"Expected shader extensions missing in SHADER_EXTENSIONS: {missing}"

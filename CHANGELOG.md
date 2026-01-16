@@ -1,4 +1,55 @@
 <!-- markdownlint-disable MD025 MD024 -->
+# What's New in Version 0.9.1
+
+## 🌟 Major Features
+
+### 🔄 Revert Functionality
+
+Added comprehensive revert functionality to undo changes made by PyAnnotate:
+
+- **Automatic backup creation**: Backups are automatically created when files are modified
+- **Manual revert**: Use `pyannotate --revert` to restore files to their state before the last run
+- **Dry-run revert**: Preview revert operations with `pyannotate --revert --dry-run`
+- **Backup file**: Backups are stored in `.pyannotate_backup.json` in the project root
+- **Relative paths**: Backups use relative paths for portability across systems
+- **Error handling**: Gracefully handles missing files, permission errors, and other edge cases
+
+**Usage:**
+
+```bash
+# Normal annotation (creates backup automatically)
+pyannotate
+
+# Revert last changes
+pyannotate --revert
+
+# Preview revert without applying
+pyannotate --revert --dry-run
+```
+
+**Python API:**
+
+```python
+from pyannotate.backup import revert_files
+stats = revert_files(project_root, dry_run=False)
+```
+
+### 🎨 Shader File Protection
+
+Added automatic protection for shader files that require `#version` directive at the top:
+
+- **Supported shader types**: `.vert`, `.frag`, `.geom`, `.comp`, `.tesc`, `.tese`, `.glsl`, `.hlsl`, `.wgsl`, `.shader`
+- **Automatic skipping**: Shader files are automatically skipped to prevent breaking compilation
+- **Comprehensive coverage**: All common GLSL, HLSL, and WebGPU shader extensions are protected
+
+**Reason**: Shader files must have `#version` as the first non-whitespace line; adding headers would break shader compilation.
+
+## 🐛 Bug Fixes
+
+- **Fixed test coverage**: Added missing `.tesc` and `.tese` extensions to shader extension tests for complete coverage
+
+---
+
 # What's New in Version 0.9.0
 
 ## 🌟 Major Features
